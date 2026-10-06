@@ -49,7 +49,7 @@ export default async function Dashboard(){
         <a href="/dashboard">I miei turni</a>
         <a href="/turni-generali">Turni generali</a>
         <a href="/richieste">Invia richieste</a>
-        <a href="/amministrazione">Amministrazione</a>
+        {["admin","super_admin"].includes(role)&&<a href="/amministrazione">Amministrazione</a>}
         <a href="/profilo">Profilo</a>
       </nav>
       <div className="user-menu">
@@ -64,7 +64,7 @@ export default async function Dashboard(){
         <div>
           <p className="eyebrow">Area personale</p>
           <h1 className="title">Ciao, {name}</h1>
-          <p className="sub">Qui trovi direttamente il tuo calendario dei turni.</p><p style={{fontSize:13,marginTop:6,opacity:.7}}>Ruolo rilevato: <strong>{role}</strong></p><div style={{fontSize:12,marginTop:8,opacity:.65,lineHeight:1.6}}><div>Sessione UUID: <code>{user.id}</code></div><div>Profilo role: <code>{String(p?.role||"NULL")}</code></div><div>RPC role: <code>{String(myRole||"NULL")}</code></div></div>
+          <p className="sub">Qui trovi direttamente il tuo calendario dei turni.</p>
         </div>
       </div>
 
