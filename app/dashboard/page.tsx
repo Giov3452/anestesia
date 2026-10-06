@@ -64,7 +64,7 @@ export default async function Dashboard(){
         <div>
           <p className="eyebrow">Area personale</p>
           <h1 className="title">Ciao, {name}</h1>
-          <p className="sub">Qui trovi direttamente il tuo calendario dei turni.</p>
+          <p className="sub">Qui trovi direttamente il tuo calendario dei turni.</p><p style={{fontSize:13,marginTop:6,opacity:.7}}>Ruolo rilevato: <strong>{role}</strong></p>
         </div>
       </div>
 
