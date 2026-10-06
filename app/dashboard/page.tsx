@@ -27,7 +27,7 @@ export default async function Dashboard(){
   const {data:p}=await s.from("profiles").select("username,role").eq("id",user.id).single();
   const {data:shifts}=await s.from("shifts").select("shift_date,shift_type").eq("user_id",user.id).order("shift_date");
 
-  const name=p?.username||"Utente";
+  const name=p?.username||user.user_metadata?.username||user.email?.split("@")[0]||"";
   const role=p?.role||"utente";
   const now=new Date();
   const year=now.getFullYear();
