@@ -2,6 +2,8 @@ import {redirect} from "next/navigation";
 import {createClient} from "@/lib/supabase/server";
 import {CalendarDays,ClipboardList,FileText} from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 const weekdays=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 const shiftLabels:Record<string,string>={G:"Giorno",N:"Notte",M1:"M1",M2:"M2",M3:"M3",mp:"Mattino + pomeriggio",RC:"Riposo compensativo"};
 
