@@ -49,7 +49,7 @@ export default async function Dashboard(){
         <a href="/dashboard">I miei turni</a>
         <a href="/turni-generali">Turni generali</a>
         <a href="/richieste">Invia richieste</a>
-        {(role==="admin"||role==="super_admin")&&<a href="/amministrazione">Amministrazione</a>}
+        <a href="/amministrazione">Amministrazione</a>
         <a href="/profilo">Profilo</a>
       </nav>
       <div className="user-menu">
