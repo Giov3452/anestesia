@@ -28,7 +28,7 @@ export default async function Dashboard(){
   const {data:shifts}=await s.from("shifts").select("shift_date,shift_type").eq("user_id",user.id).order("shift_date");
 
   const name=p?.username||user.user_metadata?.username||user.email?.split("@")[0]||"";
-  const role=p?.role||"utente";
+  const role=p?.role?.toLowerCase()||"utente";
   const now=new Date();
   const year=now.getFullYear();
   const month=now.getMonth();
@@ -46,7 +46,7 @@ export default async function Dashboard(){
         <a href="/dashboard">I miei turni</a>
         <a href="/turni-generali">Turni generali</a>
         <a href="/richieste">Invia richieste</a>
-        {role!=="utente"&&<a href="/amministrazione">Amministrazione</a>}
+        {(role==="admin"||role==="super_admin")&&<a href="/amministrazione">Amministrazione</a>}
         <a href="/profilo">Profilo</a>
       </nav>
       <div className="user-menu">
