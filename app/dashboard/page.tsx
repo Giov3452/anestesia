@@ -27,10 +27,11 @@ export default async function Dashboard(){
   if(!user)redirect("/login");
 
   const {data:p}=await s.from("profiles").select("username,role").eq("id",user.id).single();
+  const {data:myRole}=await s.rpc("get_my_role");
   const {data:shifts}=await s.from("shifts").select("shift_date,shift_type").eq("user_id",user.id).order("shift_date");
 
   const name=p?.username||user.user_metadata?.username||user.email?.split("@")[0]||"";
-  const role=p?.role?.toLowerCase()||"utente";
+  const role=String(p?.role||myRole||"utente").toLowerCase();
   const now=new Date();
   const year=now.getFullYear();
   const month=now.getMonth();
