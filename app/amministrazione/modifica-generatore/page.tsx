@@ -5,6 +5,7 @@ import {CalendarDays,Pencil,Plus,Trash2,X} from "lucide-react";
 import Link from "next/link";
 import UserMenu from "@/app/components/UserMenu";
 import {createClient} from "@/lib/supabase/client";
+import BackButton from "@/app/components/BackButton";
 
 type Rule={id:number;code:string;name:string;description:string;enabled:boolean;config:any};
 
@@ -63,7 +64,7 @@ export default function GeneratorRules(){
 
   return <div className="shell">
     <header className="appbar"><Link className="brand" href="/dashboard"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</Link><UserMenu/></header>
-    <main className="main">
+    <main className="main"><BackButton/>
       <div className="generation-title-row"><div><p className="eyebrow">Configurazione</p><h1 className="title">Modifica Generatore</h1><p className="sub">Gestisci i vincoli utilizzati dal generatore automatico.</p></div><Link className="btn btn-secondary" href="/amministrazione">← Amministrazione</Link></div>
       {message&&<div className="success">{message}</div>}{error&&<div className="error">{error}</div>}
       <section className="card admin-table-card"><div className="table-wrap"><table className="requests-table admin-users-table"><thead><tr><th>Vincolo</th><th>Descrizione</th><th>Stato</th><th className="action-col">Modifica</th><th className="action-col">Elimina</th></tr></thead><tbody>
