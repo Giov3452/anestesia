@@ -26,3 +26,9 @@
 .manual-entry-row{position:relative;align-items:end}.manual-entry-row>.icon-btn.delete{align-self:end;margin-bottom:4px}@media(max-width:640px){.manual-entry-row{grid-template-columns:1fr}.manual-entry-row>.icon-btn.delete{justify-self:end;margin-top:-8px}}
 
 .generation-day.has-vacation .date{font-weight:850}.generation-day.has-desiderata .date{font-weight:850}
+
+/* Request markers */
+.request-dot.vacation-dot{background:#d92d20;box-shadow:0 0 0 2px #d92d2038,0 2px 7px #d92d2050}
+.request-dot.desiderata-dot{right:26px;background:#2563eb;box-shadow:0 0 0 2px #2563eb38,0 2px 7px #2563eb50}
+.request-dot.static{position:static;display:inline-block;width:12px;height:12px;min-width:12px;border:0;margin-right:4px;vertical-align:-2px;box-shadow:none;cursor:default}
+.generation-day.has-vacation .date,.generation-day.has-desiderata .date{font-weight:850}
