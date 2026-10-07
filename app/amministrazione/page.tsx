@@ -44,7 +44,7 @@ export default function Admin(){
     const effectiveProfile=p?{...p,role:effectiveRole}:null;setMe(effectiveProfile);
     if(effectiveProfile&&["admin","super_admin"].includes(effectiveRole)){
       const [{data:us},{data:defs}]=await Promise.all([
-        s.from("profiles").select("id,username,email,role,created_at").order("username"),
+        s.from("profiles").select("id,username,email,role,employment_role,created_at").order("username"),
         s.from("shift_definitions").select("id,shift_type,short_name,duration_minutes").order("shift_type").order("short_name")
       ]);
       setUsers(us||[]);setDefinitions((defs||[]) as ShiftDefinition[]);
