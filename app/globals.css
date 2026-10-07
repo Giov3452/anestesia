@@ -22,3 +22,5 @@
 .page-back:hover{background:var(--surface-2,#f7f8fa);border-color:#cbd5e1;transform:translateX(-2px)}
 .page-back:focus-visible{outline:3px solid rgba(37,99,235,.16);outline-offset:2px}
 @media(max-width:640px){.page-back{margin-bottom:14px;padding:7px 10px}}
+
+.manual-entry-row{position:relative;align-items:end}.manual-entry-row>.icon-btn.delete{align-self:end;margin-bottom:4px}@media(max-width:640px){.manual-entry-row{grid-template-columns:1fr}.manual-entry-row>.icon-btn.delete{justify-self:end;margin-top:-8px}}
