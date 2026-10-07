@@ -1,5 +1,5 @@
 "use client";
-import {redirect} from "next/navigation";import {createClient} from "@/lib/supabase/server";import {CalendarDays,ChevronLeft,ChevronRight} from "lucide-react";
+import {createClient} from "@/lib/supabase/client";import {CalendarDays,ChevronLeft,ChevronRight} from "lucide-react";
 import BackButton from "@/app/components/BackButton";
 const weekdays=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 const labels:Record<string,string>={G:"Giorno",N:"Notte",M1:"M1",M2:"M2",M3:"M3",mp:"Mattino + pomeriggio",RC:"Riposo compensativo",E:"Endoscopia",MRia:"Mattina Rianimazione",GRia:"Guardia Rianimazione",NRia:"Notte Rianimazione",RG:"Reperibilità giorno",RN:"Reperibilità notte",RP:"Reperibilità pomeriggio",SN:"Smonto notte",FT:"Fuori turno"};
