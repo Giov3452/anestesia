@@ -33,7 +33,7 @@ export default function Counters(){
   const role=String(p?.role||r||"utente").toLowerCase(),ok=["admin","super_admin"].includes(role);
   setAuthorized(ok);if(!ok)return;
   const [{data:u,error:ue},{data:d,error:de}]=await Promise.all([
-   s.from("profiles").select("id,username,email,role,employment_role,service").eq("service","anestesia").order("username"),
+   s.from("profiles").select("id,username,email,role,employment_role,service").order("username"),
    s.from("shift_definitions").select("short_name,duration_minutes")
   ]);
   if(ue||de){setError(ue?.message||de?.message||"Errore nel caricamento");return}
@@ -57,7 +57,7 @@ export default function Counters(){
   return()=>{s.removeChannel(channel);};
  },[authorized]);
 
- const rows=useMemo(()=>users.map(u=>{
+ const rows=useMemo(()=>users.filter(u=>u.service==="anestesia").map(u=>{
   const us=shifts.filter(x=>x.user_id===u.id);
   const count=(...codes:string[])=>us.filter(x=>codes.includes(x.short_name)).reduce((a,x)=>a+x.duration_minutes/60,0);
   const effective=us.filter(x=>!["RG","RN","RP","R","Rp"].includes(x.short_name)).reduce((a,x)=>a+x.duration_minutes/60,0);
