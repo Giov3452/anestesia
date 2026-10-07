@@ -44,3 +44,5 @@
 .generation-day.generation-conflict{background:#fff0f0;border-color:#f2a3a3;box-shadow:inset 0 0 0 2px #d92d2028}
 .generation-day.generation-conflict .date{color:#b42318;font-weight:900}
 .generation-day.generation-conflict .cell-shifts{border-color:#f3b1b1}
+
+.conflict-mini{display:inline-block;width:12px;height:12px;border-radius:3px;background:#fff0f0;border:1px solid #d92d20;vertical-align:-2px;margin-right:4px}
