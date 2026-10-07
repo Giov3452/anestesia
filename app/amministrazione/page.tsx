@@ -86,8 +86,8 @@ export default function Admin(){
     if(!allowedShort[shiftForm.shift_type]?.includes(shiftForm.short_name)){setError("Il nome breve non è compatibile con il tipo di turno.");return}
     const duration_minutes=hours*60+minutes;if(duration_minutes<=0){setError("La durata deve essere maggiore di zero.");return}
     setSaving(true);const s=createClient();
-    const {error:e}=await s.from("shift_definitions").insert({shift_type:shiftForm.shift_type,short_name:shiftForm.short_name,duration_minutes});
-    if(e)setError(e.message);else{setMessage("Nuovo tipo di turno inserito.");setShiftForm(x=>({...x,hours:"8",minutes:"0"}));await load()}
+    const {error:err}=await s.from("shift_definitions").insert({shift_type:shiftForm.shift_type,short_name:shiftForm.short_name,duration_minutes});
+    if(err)setError(err.message);else{setMessage("Nuovo tipo di turno inserito.");setShiftForm(x=>({...x,hours:"8",minutes:"0"}));await load()}
     setSaving(false);
   }
 
