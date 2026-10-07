@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {CalendarDays,Pencil,Plus,X} from "lucide-react";
 import Link from "next/link";
+import UserMenu from "@/app/components/UserMenu";
 import {createClient} from "@/lib/supabase/client";
 
 const types=[["non_lavorare","Non lavorare"],["guardia","Guardia"],["mattina","Mattina"],["pomeriggio","Pomeriggio"],["notte","Notte"]] as const;
@@ -128,11 +129,7 @@ export default function Requests(){
   }
 
   return <div className="shell">
-    <header className="appbar">
-      <Link className="brand" href="/dashboard"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</Link>
-      <nav className="nav"><Link href="/dashboard">I miei turni</Link><Link href="/turni-generali">Turni generali</Link><Link href="/richieste">Invia richieste</Link><Link href="/profilo">Profilo</Link></nav>
-      <form action="/auth/signout" method="post"><button className="btn btn-secondary">Esci</button></form>
-    </header>
+    <header className="appbar"><Link className="brand" href="/dashboard"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</Link><UserMenu/></header>
 
     <main className="main">
       <p className="eyebrow">Disponibilità</p><h1 className="title">Invia richieste</h1>
