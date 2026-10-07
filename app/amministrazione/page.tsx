@@ -55,7 +55,15 @@ export default function Admin(){
 
   async function invoke(body:any){
     const {data,error}=await createClient().functions.invoke("admin-users",{body});
-    if(error)throw error;if(data?.error)throw new Error(data.error);return data;
+    if(error){
+      const ctx=(error as any)?.context;
+      if(ctx?.json){
+        try{const body=await ctx.json();throw new Error(body?.error||error.message)}catch(e){if(e instanceof Error)throw e;}
+      }
+      throw error;
+    }
+    if(data?.error)throw new Error(data.error);
+    return data;
   }
 
   async function createUser(e:FormEvent){
