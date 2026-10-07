@@ -8,7 +8,7 @@ import {createClient} from "@/lib/supabase/client";
 import BackButton from "@/app/components/BackButton";
 import {italianNationalHolidayName} from "@/lib/calendar";
 
-type User={id:string;username:string;role:string};
+type User={id:string;username:string;role:string;service:string};
 type Assignment={id:number;user_id:string;shift_date:string;short_name:string;shift_type:string|null;source:string;status:string;notes:string|null};
 type Request={id:number;user_id:string;request_date:string;request_types:string[];notes:string|null;username?:string};
 type Vacation={id:number;user_id:string;start_date:string;end_date:string;notes:string|null;username?:string};
@@ -60,7 +60,7 @@ export default function GenerateShifts(){
     const role=String(p?.role||r||"utente").toLowerCase(); setAuthorized(["admin","super_admin"].includes(role)); if(!["admin","super_admin"].includes(role))return;
     const y=current.getFullYear(),m=current.getMonth(),start=iso(y,m,1),end=iso(y,m,new Date(y,m+1,0).getDate()),prev=iso(y,m,0);
     const [{data:us},{data:ds},{data:as},{data:req},{data:vac},{data:rr}]=await Promise.all([
-      s.from("profiles").select("id,username,role").order("username"),
+      s.from("profiles").select("id,username,role,service").order("username"),
       s.from("shift_definitions").select("id,shift_type,short_name,duration_minutes").order("short_name"),
       s.from("calendar_shifts").select("*").gte("shift_date",start).lte("shift_date",end).order("shift_date").order("short_name"),
       s.from("requests").select("id,user_id,request_date,request_types,notes").gte("request_date",start).lte("request_date",end),
