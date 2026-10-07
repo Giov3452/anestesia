@@ -27,16 +27,19 @@ export default async function Dashboard(){
   const {data:{user}}=await s.auth.getUser();
   if(!user)redirect("/login");
 
-  const {data:p}=await s.from("profiles").select("username,role").eq("id",user.id).single();
-  const {data:myRole}=await s.rpc("get_my_role");
-  const {data:shifts}=await s.from("calendar_shifts").select("shift_date,short_name").eq("user_id",user.id).order("shift_date");
-
-  const name=p?.username||user.user_metadata?.username||user.email?.split("@")[0]||"";
-  const role=String(p?.role||myRole||"utente").toLowerCase();
+  const {data:p}=await s.from("profiles").select("username").eq("id",user.id).single();
   const now=new Date();
   const year=now.getFullYear();
-  const month=now.getMonth();
-  const cells=buildCalendar(year,month);
+  const month=now.getMonth()+1;
+  const {data:status}=await s.from("calendar_month_status").select("validated").eq("year",year).eq("month",month).maybeSingle();
+  const validated=status?.validated===true;
+  const {data:shifts}=validated
+    ? await s.from("calendar_shifts").select("shift_date,short_name").eq("user_id",user.id).order("shift_date")
+    : {data:[] as {shift_date:string;short_name:string}[]};
+
+  const name=p?.username||user.user_metadata?.username||user.email?.split("@")[0]||"";
+  const calendarMonth=month-1;
+  const cells=buildCalendar(year,calendarMonth);
   const monthName=new Intl.DateTimeFormat("it-IT",{month:"long",year:"numeric"}).format(now);
   const shiftsByDate=(shifts||[]).reduce<Record<string,string[]>>((acc,shift)=>{
     (acc[shift.shift_date]??=[]).push(shift.short_name);
@@ -61,26 +64,33 @@ export default async function Dashboard(){
             <p className="eyebrow">Programmazione personale</p>
             <h2>{monthName.charAt(0).toUpperCase()+monthName.slice(1)}</h2>
           </div>
-          <span className="calendar-count">{shifts?.length||0} turni</span>
+          <span className="calendar-count">{validated ? `${shifts?.length||0} turni` : "Non convalidati"}</span>
         </div>
-        <div className="calendar">
-          {weekdays.map(day=><div className="dow" key={day}>{day}</div>)}
-          {cells.map((day,index)=>{
-            if(!day) return <div className="day empty" key={`empty-${index}`}/>;
-            const key=dateKey(year,month,day);
-            const dayShifts=shiftsByDate[key]||[];
-            return <div className="day" key={key}>
-              <div className="date">{day}</div>
-              {dayShifts.map(type=><div className="shift" key={type}>{type} · {shiftLabels[type]||type}</div>)}
-            </div>;
-          })}
-        </div>
+        {!validated ? (
+          <div className="card" style={{margin:0,textAlign:"center"}}>
+            <h3>Turni non ancora convalidati</h3>
+            <p className="muted">I tuoi turni personali saranno visibili qui dopo la convalida dei turni del mese da parte dell'amministrazione.</p>
+          </div>
+        ) : (
+          <div className="calendar">
+            {weekdays.map(day=><div className="dow" key={day}>{day}</div>)}
+            {cells.map((day,index)=>{
+              if(!day) return <div className="day empty" key={`empty-${index}`}/>;
+              const key=dateKey(year,calendarMonth,day);
+              const dayShifts=shiftsByDate[key]||[];
+              return <div className="day" key={key}>
+                <div className="date">{day}</div>
+                {dayShifts.map(type=><div className="shift" key={type}>{type} · {shiftLabels[type]||type}</div>)}
+              </div>;
+            })}
+          </div>
+        )}
       </section>
 
       <div className="grid dashboard-cards">
         <a className="card" href="/richieste"><ClipboardList size={22}/><h2>Richieste</h2><p className="muted">Indica disponibilità, indisponibilità e ferie.</p></a>
         <a className="card" href="/turni-generali"><FileText size={22}/><h2>Turni generali</h2><p className="muted">Consulta la programmazione completa del reparto.</p></a>
-        <div className="card"><CalendarDays size={22}/><h2>Turni futuri</h2><p className="muted">{shifts?.length||0} turni presenti in programmazione.</p></div>
+        <div className="card"><CalendarDays size={22}/><h2>Turni futuri</h2><p className="muted">{validated ? `${shifts?.length||0} turni presenti in programmazione.` : "Turni non ancora convalidati."}</p></div>
       </div>
     </main>
   </div>;
