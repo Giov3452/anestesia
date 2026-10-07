@@ -111,7 +111,12 @@ export default function GenerateShifts(){
     for(let day=1;day<=new Date(y,m+1,0).getDate();day++){
       const date=iso(y,m,day);const weekend=isWeekend(date);const eligible=(code:string)=>users.filter(u=>canWork(u.id,date,code)).sort((a,b)=>score(b.id,date,code)-score(a.id,date,code));
       const need=weekend?["G","N"]:["M1","M2","M3","G","N"];
-      for(const code of need){if(rules.some(r=>r.code==="weekend_guard"&&!r.enabled)&&weekend&&code==="G")continue;if(rules.some(r=>r.code==="weekend_night"&&!r.enabled)&&weekend&&code==="N")continue;if(!weekend&&code.startsWith("M")&&!rules.some(r=>r.code==="weekday_morning_rooms"&&r.enabled))continue;if(!rules.some(r=>r.code==="daily_guard"&&r.enabled)&&code==="G")continue;if(!rules.some(r=>r.code==="daily_night"&&r.enabled)&&code==="N")continue;const cand=eligible(code).filter(u=>!has(u.id,date,code));if(cand[0])add(cand[0].id,date,code);}
+      for(const code of need){if(rules.some(r=>r.code==="weekend_guard"&&!r.enabled)&&weekend&&code==="G")continue;if(rules.some(r=>r.code==="weekend_night"&&!r.enabled)&&weekend&&code==="N")continue;if(!weekend&&code.startsWith("M")&&!rules.some(r=>r.code==="weekday_morning_rooms"&&r.enabled))continue;if(!rules.some(r=>r.code==="daily_guard"&&r.enabled)&&code==="G")continue;if(!rules.some(r=>r.code==="daily_night"&&r.enabled)&&code==="N")continue;const cand=eligible(code).filter(u=>!has(u.id,date,code));
+        if(cand[0])add(cand[0].id,date,code);
+        else{
+          const fallback=users.filter(u=>!has(u.id,date,code)).sort((a,b)=>score(b.id,date,code)-score(a.id,date,code))[0]||users.sort((a,b)=>score(b.id,date,code)-score(a.id,date,code))[0];
+          if(fallback)add(fallback.id,date,code);
+        }}
       if(restRule?.enabled){for(const u of users){const d0=new Date(date+"T00:00:00");d0.setDate(d0.getDate()-1);const pd=iso(d0.getFullYear(),d0.getMonth(),d0.getDate());const hadN=existing.concat(added).some(a=>a.user_id===u.id&&a.shift_date===pd&&a.short_name==="N")||((old||[]) as any[]).some(a=>a.user_id===u.id&&a.short_name==="N");if(hadN&&!has(u.id,date,"SN")){const sd=defs.find(x=>x.short_name==="SN");added.push({user_id:u.id,shift_date:date,short_name:"SN",shift_type:sd?.shift_type||"Smonto notte",source:"automatic",status:"draft",generation_batch:batch,notes:"Smonto notte automatico"});}}}
     }
     if(added.length){const {error:e}=await s.from("calendar_shifts").insert(added);if(e)throw e;}
