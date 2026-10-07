@@ -3,6 +3,7 @@
 import {FormEvent,useEffect,useState} from "react";
 import {CalendarDays,ChevronRight,Pencil,Plus,Trash2,X} from "lucide-react";
 import Link from "next/link";
+import UserMenu from "@/app/components/UserMenu";
 import {createClient} from "@/lib/supabase/client";
 
 type User={id:string;username:string;email:string;role:string;created_at:string};
@@ -101,7 +102,7 @@ export default function Admin(){
   if(!me||!["admin","super_admin"].includes(me.role))return <main className="auth"><section className="auth-card"><h1 className="title">Accesso negato</h1><p className="sub">Questa sezione è riservata agli amministratori.</p><Link className="link" href="/dashboard">Torna alla dashboard</Link></section></main>;
 
   return <div className="shell">
-    <header className="appbar"><Link className="brand" href="/dashboard"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</Link><nav className="nav"><Link href="/dashboard">I miei turni</Link><Link href="/turni-generali">Turni generali</Link><Link href="/richieste">Invia richieste</Link><Link href="/amministrazione">Amministrazione</Link><Link href="/profilo">Profilo</Link></nav><form action="/auth/signout" method="post"><button className="btn btn-secondary">Esci</button></form></header>
+    <header className="appbar"><Link className="brand" href="/dashboard"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</Link><UserMenu/></header>
     <main className="main">
       <p className="eyebrow">Controllo sistema</p><h1 className="title">Dashboard amministrativa</h1><p className="sub">Gestione degli utenti, dei tipi di turno e generazione del calendario.</p>
       {message&&<div className="success">{message}</div>}{error&&<div className="error">{error}</div>}
