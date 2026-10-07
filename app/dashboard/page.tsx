@@ -1,4 +1,5 @@
 import UserMenu from "@/app/components/UserMenu";
+import PersonalCounters from "@/app/dashboard/contatori";
 import {redirect} from "next/navigation";
 import {createClient} from "@/lib/supabase/server";
 import {CalendarDays,ClipboardList,FileText} from "lucide-react";
@@ -86,6 +87,8 @@ export default async function Dashboard(){
           </div>
         )}
       </section>
+
+      <PersonalCounters />
 
       <div className="grid dashboard-cards">
         <a className="card" href="/richieste"><ClipboardList size={22}/><h2>Richieste</h2><p className="muted">Indica disponibilità, indisponibilità e ferie.</p></a>
