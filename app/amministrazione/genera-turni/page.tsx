@@ -100,7 +100,7 @@ export default function GenerateShifts(){
       if(restRule?.enabled){for(const u of users){const d0=new Date(date+"T00:00:00");d0.setDate(d0.getDate()-1);const pd=iso(d0.getFullYear(),d0.getMonth(),d0.getDate());const hadN=existing.concat(added).some(a=>a.user_id===u.id&&a.shift_date===pd&&a.short_name==="N")||((old||[]) as any[]).some(a=>a.user_id===u.id&&a.short_name==="N");if(hadN&&!has(u.id,date,"SN")){const sd=defs.find(x=>x.short_name==="SN");added.push({user_id:u.id,shift_date:date,short_name:"SN",shift_type:sd?.shift_type||"Smonto notte",source:"automatic",status:"draft",generation_batch:batch,notes:"Smonto notte automatico"});}}}
     }
     if(added.length){const {error:e}=await s.from("calendar_shifts").insert(added);if(e)throw e;}
-    setMessage(`Bozza generata: ${added.length} assegnazioni. I turni manuali sono stati mantenuti.`);await load();
+    setMessage(`Bozza generata: ${added.length} assegnazioni. I turni manuali sono stati mantenuti.`);await load();window.location.reload();
   }catch(e){setError(e instanceof Error?e.message:"Errore durante la generazione automatica.");}finally{setBusy(false)}}
 
   if(authorized===null)return <main className="auth"><div>Caricamento…</div></main>;
