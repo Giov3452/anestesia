@@ -30,7 +30,7 @@ export default function Admin(){
   const [userForm,setUserForm]=useState({username:"",email:"",password:"",role:"utente",employment_role:"strutturato",service:"anestesia"});
   const [shiftForm,setShiftForm]=useState({shift_type:"Mattina",short_name:"M1",hours:"8",minutes:"0"});
   const [editingUser,setEditingUser]=useState<User|null>(null);
-  const [editForm,setEditForm]=useState({username:"",email:"",password:"",role:"utente",employment_role:"strutturato"});
+  const [editForm,setEditForm]=useState({username:"",email:"",password:"",role:"utente",employment_role:"strutturato",service:"anestesia"});
   const [error,setError]=useState("");
   const [message,setMessage]=useState("");
   const [loading,setLoading]=useState(true);
