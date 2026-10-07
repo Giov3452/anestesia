@@ -1,3 +1,4 @@
+import UserMenu from "@/app/components/UserMenu";
 import {redirect} from "next/navigation";
 import {createClient} from "@/lib/supabase/server";
 import {CalendarDays,ClipboardList,FileText} from "lucide-react";
@@ -43,21 +44,7 @@ export default async function Dashboard(){
   },{});
 
   return <div className="shell">
-    <header className="appbar">
-      <div className="brand"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</div>
-      <nav className="nav">
-        <a href="/dashboard">I miei turni</a>
-        <a href="/turni-generali">Turni generali</a>
-        <a href="/richieste">Invia richieste</a>
-        {["admin","super_admin"].includes(role)&&<a href="/amministrazione">Amministrazione</a>}
-        <a href="/profilo">Profilo</a>
-      </nav>
-      <div className="user-menu">
-        <div className="avatar">{name[0]?.toUpperCase()}</div>
-        <span style={{fontSize:13,fontWeight:700}}>{name}</span>
-        <form action="/auth/signout" method="post"><button className="btn btn-secondary">Esci</button></form>
-      </div>
-    </header>
+    <header className="appbar"><div className="brand"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</div><UserMenu/></header>
 
     <main className="main">
       <div className="hero">
