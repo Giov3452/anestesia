@@ -47,7 +47,7 @@ export default function GenerateShifts(){
     if(!user){setAuthorized(false);return;}
     const [{data:p},{data:r}]=await Promise.all([s.from("profiles").select("role").eq("id",user.id).single(),s.rpc("get_my_role")]);
     const role=String(p?.role||r||"utente").toLowerCase(); setAuthorized(["admin","super_admin"].includes(role)); if(!["admin","super_admin"].includes(role))return;
-    const y=current.getFullYear(),m=current.getMonth(),start=iso(y,m,1),end=iso(y,m+1,new Date(y,m+1,0).getDate()),prev=iso(y,m,0);
+    const y=current.getFullYear(),m=current.getMonth(),start=iso(y,m,1),end=iso(y,m,new Date(y,m+1,0).getDate()),prev=iso(y,m,0);
     const [{data:us},{data:ds},{data:as},{data:req},{data:vac},{data:rr}]=await Promise.all([
       s.from("profiles").select("id,username,role").order("username"),
       s.from("shift_definitions").select("id,shift_type,short_name,duration_minutes").order("short_name"),
@@ -72,7 +72,7 @@ export default function GenerateShifts(){
   async function deleteAssignment(id:number){if(!confirm("Eliminare questo turno?"))return;const {error:e}=await createClient().from("calendar_shifts").delete().eq("id",id);if(e)setError(e.message);else{setMessage("Turno eliminato.");await load();}}
   
   async function generate(){if(!confirm("Generare una nuova bozza automatica per questo mese? I turni manuali non verranno modificati. Le eventuali bozze automatiche precedenti del mese verranno sostituite."))return;setBusy(true);setError("");setMessage("");try{
-    const s=createClient(); const y=current.getFullYear(),m=current.getMonth(),start=iso(y,m,1),end=iso(y,m+1,new Date(y,m+1,0).getDate()),prev=iso(y,m,0);
+    const s=createClient(); const y=current.getFullYear(),m=current.getMonth(),start=iso(y,m,1),end=iso(y,m,new Date(y,m+1,0).getDate()),prev=iso(y,m,0);
     await s.from("calendar_shifts").delete().eq("source","automatic").eq("status","draft").gte("shift_date",start).lte("shift_date",end);
     const [{data:manual},{data:old},{data:req},{data:vac}]=await Promise.all([
       s.from("calendar_shifts").select("*").gte("shift_date",start).lte("shift_date",end),
