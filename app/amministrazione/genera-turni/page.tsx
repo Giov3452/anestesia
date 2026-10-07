@@ -1,7 +1,7 @@
 "use client";
 
 import {FormEvent,useEffect,useMemo,useState} from "react";
-import {CalendarDays,ChevronLeft,ChevronRight,Pencil,Plus,Trash2,X,AlertCircle} from "lucide-react";
+import {CalendarDays,ChevronLeft,ChevronRight,Pencil,Trash2,X} from "lucide-react";
 import Link from "next/link";
 import {createClient} from "@/lib/supabase/client";
 
@@ -18,7 +18,7 @@ const weekDays=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
 function iso(y:number,m:number,d:number){return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;}
 function buildCalendar(y:number,m:number){const first=new Date(y,m,1);const off=(first.getDay()+6)%7;const days=new Date(y,m+1,0).getDate();return [...Array(off).fill(null),...Array.from({length:days},(_,i)=>i+1)];}
 function easterSunday(year:number){const a=year%19,b=Math.floor(year/100),c=year%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),month=Math.floor((h+l-7*m+114)/31)-1,day=((h+l-7*m+114)%31)+1;return new Date(year,month,day);}
-function holidayName(date:string){const [y,m,d]=date.split("-").map(Number);const fixed:[[number,number,string]]=[[1,1,"Capodanno"],[1,6,"Epifania"],[4,25,"Liberazione"],[5,1,"Festa del Lavoro"],[6,2,"Festa della Repubblica"],[8,15,"Ferragosto"],[11,1,"Ognissanti"],[12,8,"Immacolata"],[12,25,"Natale"],[12,26,"Santo Stefano"]];for(const [mm,dd,n] of fixed)if(m===mm&&d===dd)return n;const e=easterSunday(y);e.setDate(e.getDate()+1);if(e.getMonth()+1===m&&e.getDate()===d)return "Lunedì dell'Angelo";return null;}
+function holidayName(date:string){const [y,m,d]=date.split("-").map(Number);const fixed:[number,number,string][]=[[1,1,"Capodanno"],[1,6,"Epifania"],[4,25,"Liberazione"],[5,1,"Festa del Lavoro"],[6,2,"Festa della Repubblica"],[8,15,"Ferragosto"],[11,1,"Ognissanti"],[12,8,"Immacolata"],[12,25,"Natale"],[12,26,"Santo Stefano"]];for(const [mm,dd,n] of fixed)if(m===mm&&d===dd)return n;const e=easterSunday(y);e.setDate(e.getDate()+1);if(e.getMonth()+1===m&&e.getDate()===d)return "Lunedì dell'Angelo";return null;}
 function isWeekend(date:string){const [y,m,d]=date.split("-").map(Number);const w=new Date(y,m-1,d).getDay();return w===0||w===6;}
 function fmtDate(v:string){return new Date(v+"T00:00:00").toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"});}
 
@@ -62,7 +62,7 @@ export default function GenerateShifts(){
   const cells=useMemo(()=>buildCalendar(current.getFullYear(),current.getMonth()),[current]);
   const requestMap=useMemo(()=>{const m:Record<string,Request[]|undefined>={};for(const r of requests){(m[r.request_date]??=[]).push({...r,username:users.find(u=>u.id===r.user_id)?.username})}for(const v of vacations){for(let d=new Date(v.start_date+"T00:00:00");d<=new Date(v.end_date+"T00:00:00");d.setDate(d.getDate()+1)){const k=iso(d.getFullYear(),d.getMonth(),d.getDate());(m[k]??=[]).push({id:-v.id,user_id:v.user_id,request_date:k,request_types:["FERIE"],notes:v.notes,username:users.find(u=>u.id===v.user_id)?.username});}}return m},[requests,vacations,users]);
 
-  function openDay(date:string){const day=assignments.filter(a=>a.shift_date===date);setSelectedDate(date);setEditId(null);setForm({user_id:users[0]?.id||"",short_name:defs[0]?.short_name||"",notes:""});setMessage("");setError("");}
+  function openDay(date:string){setSelectedDate(date);setEditId(null);setForm({user_id:users[0]?.id||"",short_name:defs[0]?.short_name||"",notes:""});setMessage("");setError("");}
   function editAssignment(a:Assignment){setEditId(a.id);setForm({user_id:a.user_id,short_name:a.short_name,notes:a.notes||""});setError("");}
   async function saveAssignment(e:FormEvent){e.preventDefault();if(!selectedDate||!form.user_id||!form.short_name)return;setBusy(true);setError("");const s=createClient();const def=defs.find(d=>d.short_name===form.short_name);const payload={user_id:form.user_id,shift_date:selectedDate,short_name:form.short_name,shift_type:def?.shift_type||null,source:"manual",status:"confirmed",notes:form.notes||null};const q=editId?s.from("calendar_shifts").update(payload).eq("id",editId):s.from("calendar_shifts").insert(payload);const {error:e}=await q;if(e)setError(e.code==="23505"?"Questo utente ha già lo stesso turno in questa giornata.":e.message);else{setMessage(editId?"Turno modificato.":"Turno inserito.");setEditId(null);setForm({user_id:users[0]?.id||"",short_name:defs[0]?.short_name||"",notes:""});await load()}setBusy(false);}
   async function deleteAssignment(id:number){if(!confirm("Eliminare questo turno?"))return;const {error:e}=await createClient().from("calendar_shifts").delete().eq("id",id);if(e)setError(e.message);else{setMessage("Turno eliminato.");await load();}}
