@@ -20,7 +20,7 @@ export default function Counters(){
  const [users,setUsers]=useState<User[]>([]);
  const [shifts,setShifts]=useState<Shift[]>([]);
  const [error,setError]=useState("");
- const [current,setCurrent]=useState(()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),1)});
+ const [current,setCurrent]=useState(()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),1)});\n const [realtimeTick,setRealtimeTick]=useState(0);
  const month=current.getMonth(),year=current.getFullYear();
 
  useEffect(()=>{(async()=>{
@@ -43,7 +43,7 @@ export default function Counters(){
   const {data:c,error:ce}=await s.from("calendar_shifts").select("user_id,short_name").gte("shift_date",from).lte("shift_date",to);
   if(ce){setError(ce.message);return}
   setShifts((c||[]).map((x:any)=>({user_id:x.user_id,short_name:x.short_name,duration_minutes:defs.get(x.short_name)||0})));
- })()},[year,month]);
+ })()},[year,month,realtimeTick]);
 
  const rows=useMemo(()=>users.map(u=>{
   const us=shifts.filter(x=>x.user_id===u.id);
