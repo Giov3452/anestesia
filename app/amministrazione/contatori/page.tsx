@@ -60,7 +60,7 @@ export default function Counters(){
  const rows=useMemo(()=>users.filter(u=>u.service==="anestesia").map(u=>{
   const us=shifts.filter(x=>x.user_id===u.id);
   const count=(...codes:string[])=>us.filter(x=>codes.includes(x.short_name)).reduce((a,x)=>a+x.duration_minutes/60,0);
-  const effective=us.filter(x=>!["RG","RN","RP","R","Rp"].includes(x.short_name)).reduce((a,x)=>a+x.duration_minutes/60,0);
+  const effective=us.filter(x=>!["RG","RN","RP","R","Rp","RC","SN"].includes(x.short_name)).reduce((a,x)=>a+x.duration_minutes/60,0);
   const theoretical=theoreticalMonthlyHours(year,month,u.employment_role);
   return {...u,theoretical,effective,eccesso:effective-theoretical,mattine:count("M1","M2","M3"),pomeriggi:count("P"),ft:count("FT"),endoscopia:count("E"),guardie:count("G"),notti:count("N"),mortara:count("Mo1","Mo2"),ria:count("MRia","GRia","NRia"),reperibilita:count("RG","RN","RP"),rg:count("RG"),rn:count("RN"),rp:count("RP")};
  }),[users,shifts,year,month]);
