@@ -1,7 +1,7 @@
 "use client";
 
 import {FormEvent,useEffect,useState} from "react";
-import {CalendarDays,ChevronRight,Pencil,Plus,Trash2,UserRoundPen,X} from "lucide-react";
+import {CalendarDays,ChevronRight,Pencil,Plus,Trash2,X} from "lucide-react";
 import Link from "next/link";
 import {createClient} from "@/lib/supabase/client";
 
@@ -109,7 +109,7 @@ export default function Admin(){
       <div className="admin-dashboard-links">
         <a className="admin-dashboard-card" href="#utenti"><span><strong>Gestione utenti</strong><small>Utenti registrati, ruoli e accessi</small></span><ChevronRight size={20}/></a>
         <a className="admin-dashboard-card" href="#tipi-turno"><span><strong>Inserisci nuovi turni</strong><small>Definisci tipo, nome breve e durata</small></span><ChevronRight size={20}/></a>
-        <Link className="admin-dashboard-card" href="/amministrazione/genera-turni"><span><strong>Genera nuovi turni</strong><small>Calendario mensile e generazione dei turni</small></span><ChevronRight size={20}/></Link>
+        <Link className="admin-dashboard-card" href="/amministrazione/genera-turni"><span><strong>Generatore automatico</strong><small>Calendario mensile e generazione dei turni</small></span><ChevronRight size={20}/></Link>
       </div>
 
       <section className="admin-section" id="utenti">
