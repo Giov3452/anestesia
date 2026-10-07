@@ -8,11 +8,11 @@ import {createClient} from "@/lib/supabase/client";
 type User={id:string;username:string;email:string;role:string;created_at:string};
 type ShiftDefinition={id:number;shift_type:string;short_name:string;duration_minutes:number};
 
-const shiftTypes=["Mattina","Pomeriggio","Guardia","Notte","Endoscopia","Reperibilità pomeriggio","Reperibilità notte","Reperibilità giorno","Rianimazione"];
+const shiftTypes=["Mattina","Pomeriggio","Guardia","Notte","Endoscopia","Reperibilità pomeriggio","Reperibilità notte","Reperibilità giorno","Rianimazione","Smonto notte","Riposo compensativo"];
 const shortNames=["M1","M2","M3","Mo1","Mo2","P","G","Gm","Gp","N","E","R","Rp","Rn","Ria"];
 const allowedShort:Record<string,string[]>={
   "Mattina":["M1","M2","M3","Mo1","Mo2"],"Pomeriggio":["P"],"Guardia":["G","Gm","Gp"],"Notte":["N"],
-  "Endoscopia":["E"],"Reperibilità pomeriggio":["Rp"],"Reperibilità notte":["Rn"],"Reperibilità giorno":["R"],"Rianimazione":["Ria"]
+  "Endoscopia":["E"],"Reperibilità pomeriggio":["Rp"],"Reperibilità notte":["Rn"],"Reperibilità giorno":["R"],"Rianimazione":["Ria"],"Smonto notte":["SN"],"Riposo compensativo":["RC"]
 };
 
 function durationLabel(minutes:number){
