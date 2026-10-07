@@ -68,7 +68,7 @@ export default function Admin(){
 
   async function createUser(e:FormEvent){
     e.preventDefault();setError("");setMessage("");setSaving(true);
-    try{await invoke({action:"create",...userForm});setUserForm({username:"",email:"",password:"",role:"utente",employment_role:"strutturato"});setMessage("Utente creato.");await load()}
+    try{await invoke({action:"create",...userForm});setUserForm({username:"",email:"",password:"",role:"utente",employment_role:"strutturato",service:"anestesia"});setMessage("Utente creato.");await load()}
     catch(e){setError(e instanceof Error?e.message:"Errore");}finally{setSaving(false)}
   }
 
