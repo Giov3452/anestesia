@@ -1,5 +1,5 @@
 import UserMenu from "@/app/components/UserMenu";
-import PersonalCounters from "@/app/dashboard/contatori";
+import PersonalCounters from "@/app/components/PersonalCounters";
 import {redirect} from "next/navigation";
 import {createClient} from "@/lib/supabase/server";
 import {CalendarDays,ClipboardList,FileText} from "lucide-react";
