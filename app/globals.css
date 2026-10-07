@@ -24,3 +24,4 @@
 @media(max-width:640px){.page-back{margin-bottom:14px;padding:7px 10px}}
 
 .manual-entry-row{position:relative;align-items:end}.manual-entry-row>.icon-btn.delete{align-self:end;margin-bottom:4px}@media(max-width:640px){.manual-entry-row{grid-template-columns:1fr}.manual-entry-row>.icon-btn.delete{justify-self:end;margin-top:-8px}}
+\n.generation-day.has-vacation .date{font-weight:850}.generation-day.has-desiderata .date{font-weight:850}\n
