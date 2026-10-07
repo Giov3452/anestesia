@@ -39,3 +39,8 @@
 .admin-modal-links{display:grid;gap:12px;margin-top:12px}
 .admin-modal-links .admin-dashboard-card{width:100%}
 .admin-modal-links .admin-dashboard-card strong{display:flex;align-items:center;gap:8px}
+
+/* Automatic generation conflicts */
+.generation-day.generation-conflict{background:#fff0f0;border-color:#f2a3a3;box-shadow:inset 0 0 0 2px #d92d2028}
+.generation-day.generation-conflict .date{color:#b42318;font-weight:900}
+.generation-day.generation-conflict .cell-shifts{border-color:#f3b1b1}
