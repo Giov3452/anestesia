@@ -2,7 +2,7 @@ import UserMenu from "@/app/components/UserMenu";
 import PersonalCounters from "@/app/components/PersonalCounters";
 import {redirect} from "next/navigation";
 import {createClient} from "@/lib/supabase/server";
-import {CalendarDays,ClipboardList,FileText} from "lucide-react";
+import {CalendarDays} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -89,12 +89,6 @@ export default async function Dashboard(){
       </section>
 
       <PersonalCounters />
-
-      <div className="grid dashboard-cards">
-        <a className="card" href="/richieste"><ClipboardList size={22}/><h2>Richieste</h2><p className="muted">Indica disponibilità, indisponibilità e ferie.</p></a>
-        <a className="card" href="/turni-generali"><FileText size={22}/><h2>Turni generali</h2><p className="muted">Consulta la programmazione completa del reparto.</p></a>
-        <div className="card"><CalendarDays size={22}/><h2>Turni futuri</h2><p className="muted">{validated ? `${shifts?.length||0} turni presenti in programmazione.` : "Turni non ancora convalidati."}</p></div>
-      </div>
     </main>
   </div>;
 }
