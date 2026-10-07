@@ -20,7 +20,8 @@ export default function Counters(){
  const [users,setUsers]=useState<User[]>([]);
  const [shifts,setShifts]=useState<Shift[]>([]);
  const [error,setError]=useState("");
- const [current,setCurrent]=useState(()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),1)});\n const [realtimeTick,setRealtimeTick]=useState(0);
+ const [current,setCurrent]=useState(()=>{const d=new Date();return new Date(d.getFullYear(),d.getMonth(),1)});
+ const [realtimeTick,setRealtimeTick]=useState(0);
  const month=current.getMonth(),year=current.getFullYear();
 
  useEffect(()=>{(async()=>{
@@ -44,6 +45,17 @@ export default function Counters(){
   if(ce){setError(ce.message);return}
   setShifts((c||[]).map((x:any)=>({user_id:x.user_id,short_name:x.short_name,duration_minutes:defs.get(x.short_name)||0})));
  })()},[year,month,realtimeTick]);
+
+ useEffect(()=>{
+  if(authorized!==true)return;
+  const s=createClient();
+  const channel=s.channel("contatori-calendar-shifts")
+   .on("postgres_changes",{event:"*",schema:"public",table:"calendar_shifts"},()=>{
+    setRealtimeTick(v=>v+1);
+   })
+   .subscribe();
+  return()=>{s.removeChannel(channel);};
+ },[authorized]);
 
  const rows=useMemo(()=>users.map(u=>{
   const us=shifts.filter(x=>x.user_id===u.id);
