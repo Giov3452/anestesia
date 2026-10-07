@@ -6,7 +6,7 @@ import {CalendarDays,ClipboardList,FileText} from "lucide-react";
 export const dynamic = "force-dynamic";
 
 const weekdays=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
-const shiftLabels:Record<string,string>={G:"Giorno",N:"Notte",M1:"M1",M2:"M2",M3:"M3",mp:"Mattino + pomeriggio",RC:"Riposo compensativo"};
+const shiftLabels:Record<string,string>={G:"Giorno",N:"Notte",M1:"M1",M2:"M2",M3:"M3",mp:"Mattino + pomeriggio",RC:"Riposo compensativo",E:"Endoscopia",MRia:"Mattina Rianimazione",GRia:"Guardia Rianimazione",NRia:"Notte Rianimazione",RG:"Reperibilità giorno",RN:"Reperibilità notte",RP:"Reperibilità pomeriggio",SN:"Smonto notte",FT:"Fuori turno"};
 
 function buildCalendar(year:number,month:number){
   const first=new Date(year,month,1);
@@ -29,7 +29,7 @@ export default async function Dashboard(){
 
   const {data:p}=await s.from("profiles").select("username,role").eq("id",user.id).single();
   const {data:myRole}=await s.rpc("get_my_role");
-  const {data:shifts}=await s.from("shifts").select("shift_date,shift_type").eq("user_id",user.id).order("shift_date");
+  const {data:shifts}=await s.from("calendar_shifts").select("shift_date,short_name").eq("user_id",user.id).order("shift_date");
 
   const name=p?.username||user.user_metadata?.username||user.email?.split("@")[0]||"";
   const role=String(p?.role||myRole||"utente").toLowerCase();
@@ -39,7 +39,7 @@ export default async function Dashboard(){
   const cells=buildCalendar(year,month);
   const monthName=new Intl.DateTimeFormat("it-IT",{month:"long",year:"numeric"}).format(now);
   const shiftsByDate=(shifts||[]).reduce<Record<string,string[]>>((acc,shift)=>{
-    (acc[shift.shift_date]??=[]).push(shift.shift_type);
+    (acc[shift.shift_date]??=[]).push(shift.short_name);
     return acc;
   },{});
 
