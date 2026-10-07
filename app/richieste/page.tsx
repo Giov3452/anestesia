@@ -5,6 +5,7 @@ import {CalendarDays,Pencil,Plus,X} from "lucide-react";
 import Link from "next/link";
 import UserMenu from "@/app/components/UserMenu";
 import {createClient} from "@/lib/supabase/client";
+import BackButton from "@/app/components/BackButton";
 
 const types=[["non_lavorare","Non lavorare"],["guardia","Guardia"],["mattina","Mattina"],["pomeriggio","Pomeriggio"],["notte","Notte"]] as const;
 type RequestRow={id:number;request_date:string;request_types:string[];notes:string|null;created_at:string};
@@ -131,7 +132,7 @@ export default function Requests(){
   return <div className="shell">
     <header className="appbar"><Link className="brand" href="/dashboard"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</Link><UserMenu/></header>
 
-    <main className="main">
+    <main className="main"><BackButton/>
       <p className="eyebrow">Disponibilità</p><h1 className="title">Invia richieste</h1>
       <p className="sub">Gestisci desiderate e periodi di ferie e consulta lo storico delle richieste inviate.</p>
       {message&&<div className="success">{message}</div>}
