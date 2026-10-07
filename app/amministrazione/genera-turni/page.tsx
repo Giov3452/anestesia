@@ -23,6 +23,16 @@ function easterSunday(year:number){const a=year%19,b=Math.floor(year/100),c=year
 function holidayName(date:string){const [y,m,d]=date.split("-").map(Number);const fixed:[number,number,string][]=[[1,1,"Capodanno"],[1,6,"Epifania"],[4,25,"Liberazione"],[5,1,"Festa del Lavoro"],[6,2,"Festa della Repubblica"],[8,15,"Ferragosto"],[11,1,"Ognissanti"],[12,8,"Immacolata"],[12,25,"Natale"],[12,26,"Santo Stefano"]];for(const [mm,dd,n] of fixed)if(m===mm&&d===dd)return n;const e=easterSunday(y);e.setDate(e.getDate()+1);if(e.getMonth()+1===m&&e.getDate()===d)return "Lunedì dell'Angelo";return null;}
 function isWeekend(date:string){const [y,m,d]=date.split("-").map(Number);const w=new Date(y,m-1,d).getDay();return w===0||w===6;}
 function fmtDate(v:string){return new Date(v+"T00:00:00").toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"});}
+function requestBlocksCode(r:any,code:string){
+  if(!r?.request_types?.length)return false;
+  if(r.request_types.includes("non_lavorare"))return true;
+  if(r.request_types.includes("notte")&&code==="N")return true;
+  if(r.request_types.includes("guardia")&&["G","Gm","Gp"].includes(code))return true;
+  if(r.request_types.includes("mattina")&&["M1","M2","M3","Mo1","Mo2"].includes(code))return true;
+  if(r.request_types.includes("pomeriggio")&&code==="P")return true;
+  return false;
+}
+
 
 export default function GenerateShifts(){
   const [authorized,setAuthorized]=useState<boolean|null>(null);
@@ -90,15 +100,6 @@ export default function GenerateShifts(){
     const vacation=(uid:string,date:string)=>((vac||[]) as any[]).some(v=>v.user_id===uid&&v.start_date<=date&&v.end_date>=date);
     const reqFor=(uid:string,date:string)=>((req||[]) as any[]).find(r=>r.user_id===uid&&r.request_date===date);
     const restRule=rules.find(r=>r.code==="rest_after_night"&&r.enabled);
-    const requestBlocksCode=(r:any,code:string)=>{
-      if(!r?.request_types?.length)return false;
-      if(r.request_types.includes("non_lavorare"))return true;
-      if(r.request_types.includes("notte")&&code==="N")return true;
-      if(r.request_types.includes("guardia")&&["G","Gm","Gp"].includes(code))return true;
-      if(r.request_types.includes("mattina")&&["M1","M2","M3","Mo1","Mo2"].includes(code))return true;
-      if(r.request_types.includes("pomeriggio")&&code==="P")return true;
-      return false;
-    };
     const canWork=(uid:string,date:string,code:string)=>{
       if(vacation(uid,date))return false;
       const r=reqFor(uid,date); if(requestBlocksCode(r,code))return false;
