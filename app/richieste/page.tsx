@@ -9,6 +9,7 @@ const types=[["non_lavorare","Non lavorare"],["guardia","Guardia"],["mattina","M
 type RequestRow={id:number;request_date:string;request_types:string[];notes:string|null;created_at:string};
 type VacationRow={id:number;start_date:string;end_date:string;notes:string|null;created_at:string};
 type HistoryRow={kind:"desiderata"|"ferie";id:number;created_at:string;dateLabel:string;detail:string};
+type DraftDate={date:string;types:string[]};
 
 const typeLabel=(value:string)=>types.find(([key])=>key===value)?.[1]||value;
 const formatDate=(value:string)=>new Date(value+"T12:00:00").toLocaleDateString("it-IT");
@@ -20,7 +21,7 @@ export default function Requests(){
   const [date,setDate]=useState("");
   const [selected,setSelected]=useState<string[]>(["non_lavorare"]);
   const [notes,setNotes]=useState("");
-  const [dates,setDates]=useState<string[]>([]);
+  const [dates,setDates]=useState<DraftDate[]>([]);
   const [vacStart,setVacStart]=useState("");
   const [vacEnd,setVacEnd]=useState("");
   const [vacNotes,setVacNotes]=useState("");
@@ -79,8 +80,8 @@ export default function Requests(){
   function addDate(){
     setError("");
     if(!date||!selected.length){setError("Seleziona una data e almeno una tipologia.");return}
-    if(dates.includes(date)){setError("Questa data è già presente nella richiesta.");return}
-    setDates(current=>[...current,date].sort());setDate("");
+    if(dates.some(item=>item.date===date)){setError("Questa data è già presente nella richiesta.");return}
+    setDates(current=>[...current,{date,types:[...selected]}].sort((a,b)=>a.date.localeCompare(b.date)));setDate("");
   }
 
   async function saveDesiderata(){
@@ -92,9 +93,10 @@ export default function Requests(){
       const {error:e}=await s.from("requests").update({request_date:date,request_types:selected,notes:notes||null,updated_at:new Date().toISOString()}).eq("id",editing.id).eq("user_id",user.id);
       if(e){setError(e.message);setSaving(false);return}
     }else{
-      const allDates=[...dates];if(date)allDates.push(date);const uniqueDates=[...new Set(allDates)];
-      if(!uniqueDates.length||!selected.length){setError("Aggiungi almeno un giorno e una tipologia.");setSaving(false);return}
-      const {error:e}=await s.from("requests").upsert(uniqueDates.map(request_date=>({user_id:user.id,request_date,request_types:selected,notes:notes||null})),{onConflict:"user_id,request_date"});
+      const pending=[...dates];if(date)pending.push({date,types:[...selected]});
+      const uniqueDates=pending.filter((item,index,arr)=>arr.findIndex(x=>x.date===item.date)===index);
+      if(!uniqueDates.length||uniqueDates.some(item=>!item.types.length)){setError("Ogni giorno deve avere almeno una tipologia.");setSaving(false);return}
+      const {error:e}=await s.from("requests").upsert(uniqueDates.map(item=>({user_id:user.id,request_date:item.date,request_types:item.types,notes:notes||null})),{onConflict:"user_id,request_date"});
       if(e){setError(e.message);setSaving(false);return}
     }
     await load();setSaving(false);resetModal();setMessage(editing?"Desiderata modificata correttamente.":"Desiderate inviate correttamente.");
@@ -157,11 +159,10 @@ export default function Requests(){
         <div className="modal-head"><div><p className="eyebrow">{editing?"Modifica":"Nuova richiesta"}</p><h2 id="request-modal-title">{open==="desiderata"?"Inserimento Desiderata":"Inserimento Ferie"}</h2></div><button className="icon-btn" aria-label="Chiudi" onClick={resetModal}><X size={21}/></button></div>
 
         {open==="desiderata"?<div>
-          <p className="modal-help">Puoi aggiungere tutti i giorni che desideri, anche se non sono consecutivi.</p>
+          <p className="modal-help">Per ogni giorno puoi scegliere una o più richieste. I giorni possono essere anche non consecutivi.</p>
           <div className="field"><label>Giorno</label><div className="date-add"><input type="date" value={date} onChange={e=>setDate(e.target.value)}/>{!editing&&<button type="button" className="btn btn-secondary" onClick={addDate}><Plus size={16}/> Aggiungi</button>}</div></div>
           <div className="field"><label>Tipologie</label><div className="type-options">{types.map(([value,label])=><button type="button" key={value} className={"type-option "+(selected.includes(value)?"selected":"")} onClick={()=>toggleType(value)}>{label}</button>)}</div></div>
-          {!editing&&dates.length>0&&<div className="selected-dates"><strong>Giorni selezionati</strong>{dates.map(item=><div className="selected-date" key={item}><span>{formatDate(item)}</span><button type="button" onClick={()=>setDates(current=>current.filter(x=>x!==item))}><X size={15}/></button></div>)}</div>}
-          <div className="field"><label>Note</label><textarea rows={3} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Eventuali indicazioni..."/></div>
+          {!editing&&dates.length>0&&<div className="selected-dates"><strong>Giorni e richieste selezionati</strong>{dates.map(item=><div className="selected-date" key={item.date}><div><span>{formatDate(item.date)}</span><small>{item.types.map(typeLabel).join(" · ")}</small></div><button type="button" aria-label={"Rimuovi "+formatDate(item.date)} onClick={()=>setDates(current=>current.filter(x=>x.date!==item.date))}><X size={15}/></button></div>)}</div>}<div className="field"><label>Note</label><textarea rows={3} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Eventuali indicazioni..."/></div>
           {error&&<div className="error">{error}</div>}
           <button className="btn btn-primary" disabled={saving} onClick={saveDesiderata}>{saving?"Salvataggio...":editing?"Salva modifiche":"Invia desiderate"}</button>
         </div>:<div>
