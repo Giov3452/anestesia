@@ -32,3 +32,10 @@
 .request-dot.desiderata-dot{right:26px;background:#2563eb;box-shadow:0 0 0 2px #2563eb38,0 2px 7px #2563eb50}
 .request-dot.static{position:static;display:inline-block;width:12px;height:12px;min-width:12px;border:0;margin-right:4px;vertical-align:-2px;box-shadow:none;cursor:default}
 .generation-day.has-vacation .date,.generation-day.has-desiderata .date{font-weight:850}
+
+/* Admin dashboard modal navigation */
+.admin-dashboard-links button.admin-dashboard-card{font:inherit;text-align:left;color:var(--ink);cursor:pointer;width:100%}
+.admin-dashboard-links button.admin-dashboard-card:hover{border-color:#c5d5ef;box-shadow:0 12px 32px #0b1f3a10;transform:translateY(-2px)}
+.admin-modal-links{display:grid;gap:12px;margin-top:12px}
+.admin-modal-links .admin-dashboard-card{width:100%}
+.admin-modal-links .admin-dashboard-card strong{display:flex;align-items:center;gap:8px}
