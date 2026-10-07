@@ -11,3 +11,4 @@
 @media(max-width:480px){
   .appbar .brand{font-size:14px}.appbar .brand-mark{width:32px;height:32px}.appbar form .btn{font-size:12px}.main{padding:16px 10px}.title{font-size:25px}.eyebrow{font-size:10px}.calendar .day{min-height:68px}.calendar-shift-chip span{display:none}.request-type-grid{grid-template-columns:1fr}.request-type-btn{padding:11px}.modal{border-radius:16px}.btn{padding:11px 13px}
 }
+.type-options{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:4px}.type-option{border:1px solid #d8deea;background:#fff;color:#4b5565;border-radius:12px;padding:12px 14px;text-align:left;font-weight:750;cursor:pointer;transition:.15s}.type-option:hover{border-color:#aebfdc;background:#f7f9fd}.type-option.selected{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 0 0 3px #0b1f3a12}.type-option.selected:hover{background:#132b4d}@media(max-width:480px){.type-options{grid-template-columns:1fr}}
