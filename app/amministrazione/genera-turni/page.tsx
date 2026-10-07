@@ -3,6 +3,7 @@
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {CalendarDays,ChevronLeft,ChevronRight,Pencil,Trash2,X} from "lucide-react";
 import Link from "next/link";
+import UserMenu from "@/app/components/UserMenu";
 import {createClient} from "@/lib/supabase/client";
 
 type User={id:string;username:string;role:string};
@@ -106,7 +107,7 @@ export default function GenerateShifts(){
   if(authorized===null)return <main className="auth"><div>Caricamento…</div></main>;
   if(!authorized)return <main className="auth"><section className="auth-card"><h1 className="title">Accesso negato</h1><p className="sub">Questa sezione è riservata agli amministratori.</p><Link className="link" href="/dashboard">Torna alla dashboard</Link></section></main>;
 
-  return <div className="shell"><header className="appbar"><Link className="brand" href="/dashboard"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</Link><nav className="nav"><Link href="/dashboard">I miei turni</Link><Link href="/turni-generali">Turni generali</Link><Link href="/richieste">Invia richieste</Link><Link href="/amministrazione">Amministrazione</Link><Link href="/profilo">Profilo</Link></nav><form action="/auth/signout" method="post"><button className="btn btn-secondary">Esci</button></form></header>
+  return <div className="shell"><header className="appbar"><Link className="brand" href="/dashboard"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</Link><UserMenu/></header>
   <main className="main"><div className="generation-title-row"><div><p className="eyebrow">Programmazione</p><h1 className="title">Genera nuovi turni</h1><p className="sub">Calendario mensile operativo. Le celle sono modificabili manualmente.</p></div><div className="generator-links"><button className="generator-auto-link" onClick={generate} disabled={busy}>Generatore automatico</button><Link href="/amministrazione/modifica-generatore">Modifica Generatore</Link></div></div>
   {message&&<div className="success">{message}</div>}{error&&<div className="error">{error}</div>}
   <section className="calendar-card"><div className="calendar-head"><button className="icon-btn" onClick={()=>setCurrent(new Date(current.getFullYear(),current.getMonth()-1,1))}><ChevronLeft size={20}/></button><div style={{textAlign:"center"}}><p className="eyebrow" style={{margin:0}}>{current.getFullYear()}</p><h2>{monthNames[current.getMonth()]}</h2></div><button className="icon-btn" onClick={()=>setCurrent(new Date(current.getFullYear(),current.getMonth()+1,1))}><ChevronRight size={20}/></button></div>
