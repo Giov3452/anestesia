@@ -7,7 +7,7 @@ import UserMenu from "@/app/components/UserMenu";
 import {createClient} from "@/lib/supabase/client";
 import BackButton from "@/app/components/BackButton";
 
-type User={id:string;username:string;email:string;role:string;employment_role:string;created_at:string};
+type User={id:string;username:string;email:string;role:string;employment_role:string;service:string;created_at:string};
 type ShiftDefinition={id:number;shift_type:string;short_name:string;duration_minutes:number};
 
 const shiftTypes=["Mattina","Pomeriggio","Guardia","Notte","Endoscopia","Reperibilità pomeriggio","Reperibilità notte","Reperibilità giorno","Rianimazione","Smonto notte","Riposo compensativo"];
@@ -27,7 +27,7 @@ export default function Admin(){
   const [users,setUsers]=useState<User[]>([]);
   const [me,setMe]=useState<User|null>(null);
   const [definitions,setDefinitions]=useState<ShiftDefinition[]>([]);
-  const [userForm,setUserForm]=useState({username:"",email:"",password:"",role:"utente",employment_role:"strutturato"});
+  const [userForm,setUserForm]=useState({username:"",email:"",password:"",role:"utente",employment_role:"strutturato",service:"anestesia"});
   const [shiftForm,setShiftForm]=useState({shift_type:"Mattina",short_name:"M1",hours:"8",minutes:"0"});
   const [editingUser,setEditingUser]=useState<User|null>(null);
   const [editForm,setEditForm]=useState({username:"",email:"",password:"",role:"utente",employment_role:"strutturato"});
@@ -39,12 +39,12 @@ export default function Admin(){
 
   const load=async()=>{
     setLoading(true);const s=createClient();const {data:{user}}=await s.auth.getUser();if(!user)return;
-    const {data:p}=await s.from("profiles").select("id,username,email,role,employment_role,created_at").eq("id",user.id).single();
+    const {data:p}=await s.from("profiles").select("id,username,email,role,employment_role,service,created_at").eq("id",user.id).single();
     const {data:myRole}=await s.rpc("get_my_role");const effectiveRole=String(p?.role||myRole||"utente").toLowerCase();
     const effectiveProfile=p?{...p,role:effectiveRole}:null;setMe(effectiveProfile);
     if(effectiveProfile&&["admin","super_admin"].includes(effectiveRole)){
       const [{data:us},{data:defs}]=await Promise.all([
-        s.from("profiles").select("id,username,email,role,employment_role,created_at").order("username"),
+        s.from("profiles").select("id,username,email,role,employment_role,service,created_at").order("username"),
         s.from("shift_definitions").select("id,shift_type,short_name,duration_minutes").order("shift_type").order("short_name")
       ]);
       setUsers(us||[]);setDefinitions((defs||[]) as ShiftDefinition[]);
@@ -72,11 +72,11 @@ export default function Admin(){
     catch(e){setError(e instanceof Error?e.message:"Errore");}finally{setSaving(false)}
   }
 
-  function openEdit(u:User){setEditingUser(u);setEditForm({username:u.username,email:u.email,password:"",role:u.role,employment_role:u.employment_role||"strutturato"});setError("");setMessage("")}
+  function openEdit(u:User){setEditingUser(u);setEditForm({username:u.username,email:u.email,password:"",role:u.role,employment_role:u.employment_role||"strutturato",service:u.service||"anestesia"});setError("");setMessage("")}
 
   async function saveUser(e:FormEvent){
     e.preventDefault();if(!editingUser)return;setError("");setMessage("");setSaving(true);
-    try{await invoke({action:"update",userId:editingUser.id,username:editForm.username,email:editForm.email,password:editForm.password||undefined,role:editForm.role,employment_role:editForm.employment_role});setEditingUser(null);setMessage("Utente modificato.");await load()}
+    try{await invoke({action:"update",userId:editingUser.id,username:editForm.username,email:editForm.email,password:editForm.password||undefined,role:editForm.role,employment_role:editForm.employment_role,service:editForm.service});setEditingUser(null);setMessage("Utente modificato.");await load()}
     catch(e){setError(e instanceof Error?e.message:"Errore");}finally{setSaving(false)}
   }
 
@@ -123,9 +123,9 @@ export default function Admin(){
       </div>
 
       <section className="admin-section" id="utenti">
-        <div className="card admin-form-card"><h2><Plus size={18}/> Nuovo utente</h2><form className="admin-form-grid" onSubmit={createUser}><div className="field"><label>Nome utente</label><input required value={userForm.username} onChange={e=>setUserForm({...userForm,username:e.target.value})}/></div><div className="field"><label>Email</label><input type="email" required value={userForm.email} onChange={e=>setUserForm({...userForm,email:e.target.value})}/></div><div className="field"><label>Password temporanea</label><input type="password" required minLength={6} value={userForm.password} onChange={e=>setUserForm({...userForm,password:e.target.value})}/></div><div className="field"><label>Ruolo professionale</label><select value={userForm.employment_role} onChange={e=>setUserForm({...userForm,employment_role:e.target.value})}><option value="strutturato">Strutturato</option><option value="calabria">Calabria</option><option value="part_time">Part-time</option></select></div><div className="field"><label>Livello</label><select value={userForm.role} onChange={e=>setUserForm({...userForm,role:e.target.value})}>{me.role==="super_admin"&&<option value="super_admin">Super admin</option>}<option value="admin">Admin</option><option value="utente">Utente</option></select></div><button className="btn btn-primary" disabled={saving}>Crea utente</button></form></div>
+        <div className="card admin-form-card"><h2><Plus size={18}/> Nuovo utente</h2><form className="admin-form-grid" onSubmit={createUser}><div className="field"><label>Nome utente</label><input required value={userForm.username} onChange={e=>setUserForm({...userForm,username:e.target.value})}/></div><div className="field"><label>Email</label><input type="email" required value={userForm.email} onChange={e=>setUserForm({...userForm,email:e.target.value})}/></div><div className="field"><label>Password temporanea</label><input type="password" required minLength={6} value={userForm.password} onChange={e=>setUserForm({...userForm,password:e.target.value})}/></div><div className="field"><label>Ruolo professionale</label><select value={userForm.employment_role} onChange={e=>setUserForm({...userForm,employment_role:e.target.value})}><option value="strutturato">Strutturato</option><option value="calabria">Calabria</option><option value="part_time">Part-time</option></select></div><div className="field"><label>Servizio</label><select value={userForm.service} onChange={e=>setUserForm({...userForm,service:e.target.value})}><option value="anestesia">Anestesia</option><option value="rianimazione">Rianimazione</option></select></div><div className="field"><label>Livello</label><select value={userForm.role} onChange={e=>setUserForm({...userForm,role:e.target.value})}>{me.role==="super_admin"&&<option value="super_admin">Super admin</option>}<option value="admin">Admin</option><option value="utente">Utente</option></select></div><button className="btn btn-primary" disabled={saving}>Crea utente</button></form></div>
 
-        <div className="card admin-table-card"><div className="table-wrap"><table className="requests-table admin-users-table"><thead><tr><th>Data registrazione</th><th>Nome utente</th><th>Email</th><th>Ruolo</th><th>Livello</th><th className="action-col">Modifica</th><th className="action-col">Cancella</th></tr></thead><tbody>{users.map(u=><tr key={u.id}><td>{formatDate(u.created_at)}</td><td><strong>{u.username}</strong></td><td>{u.email}</td><td><span className="type-badge desiderata">{u.employment_role==="calabria"?"Calabria":u.employment_role==="part_time"?"Part-time":"Strutturato"}</span></td><td><span className="type-badge desiderata">{u.role==="super_admin"?"Super admin":u.role==="admin"?"Admin":"Utente"}</span></td><td className="action-cell">{u.id!==me.id&&!(u.role==="super_admin"&&me.role!=="super_admin")&&<button className="icon-btn edit" onClick={()=>openEdit(u)} title="Modifica"><Pencil size={17}/></button>}</td><td className="action-cell">{u.id!==me.id&&!(u.role==="super_admin"&&me.role!=="super_admin")&&<button className="icon-btn delete" onClick={()=>removeUser(u.id)} title="Cancella"><Trash2 size={17}/></button>}</td></tr>)}</tbody></table></div></div>
+        <div className="card admin-table-card"><div className="table-wrap"><table className="requests-table admin-users-table"><thead><tr><th>Data registrazione</th><th>Nome utente</th><th>Email</th><th>Servizio</th><th>Ruolo</th><th>Livello</th><th className="action-col">Modifica</th><th className="action-col">Cancella</th></tr></thead><tbody>{users.map(u=><tr key={u.id}><td>{formatDate(u.created_at)}</td><td><strong>{u.username}</strong></td><td>{u.email}</td><td><span className="type-badge desiderata">{u.employment_role==="calabria"?"Calabria":u.employment_role==="part_time"?"Part-time":"Strutturato"}</span></td><td><span className="type-badge desiderata">{u.service==="rianimazione"?"Rianimazione":"Anestesia"}</span></td><td><span className="type-badge desiderata">{u.role==="super_admin"?"Super admin":u.role==="admin"?"Admin":"Utente"}</span></td><td className="action-cell">{u.id!==me.id&&!(u.role==="super_admin"&&me.role!=="super_admin")&&<button className="icon-btn edit" onClick={()=>openEdit(u)} title="Modifica"><Pencil size={17}/></button>}</td><td className="action-cell">{u.id!==me.id&&!(u.role==="super_admin"&&me.role!=="super_admin")&&<button className="icon-btn delete" onClick={()=>removeUser(u.id)} title="Cancella"><Trash2 size={17}/></button>}</td></tr>)}</tbody></table></div></div>
       </section>
     </main>
 
@@ -137,7 +137,7 @@ export default function Admin(){
     </div></div>}
     {editingUser&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setEditingUser(null)}}><div className="modal" role="dialog" aria-modal="true">
       <div className="modal-head"><div><p className="eyebrow">Gestione account</p><h2>Modifica utente</h2></div><button className="icon-btn" onClick={()=>setEditingUser(null)}><X size={21}/></button></div>
-      <form onSubmit={saveUser}><div className="field"><label>Nome utente</label><input required value={editForm.username} onChange={e=>setEditForm({...editForm,username:e.target.value})}/></div><div className="field"><label>Email</label><input type="email" required value={editForm.email} onChange={e=>setEditForm({...editForm,email:e.target.value})}/></div><div className="field"><label>Nuova password <span className="muted">(opzionale)</span></label><input type="password" minLength={6} value={editForm.password} onChange={e=>setEditForm({...editForm,password:e.target.value})}/></div><div className="field"><label>Ruolo professionale</label><select value={editForm.employment_role} onChange={e=>setEditForm({...editForm,employment_role:e.target.value})}><option value="strutturato">Strutturato</option><option value="calabria">Calabria</option><option value="part_time">Part-time</option></select></div><div className="field"><label>Livello</label><select value={editForm.role} onChange={e=>setEditForm({...editForm,role:e.target.value})}>{me.role==="super_admin"&&<option value="super_admin">Super admin</option>}<option value="admin">Admin</option><option value="utente">Utente</option></select></div><button className="btn btn-primary" disabled={saving}>Salva modifiche</button></form>
+      <form onSubmit={saveUser}><div className="field"><label>Nome utente</label><input required value={editForm.username} onChange={e=>setEditForm({...editForm,username:e.target.value})}/></div><div className="field"><label>Email</label><input type="email" required value={editForm.email} onChange={e=>setEditForm({...editForm,email:e.target.value})}/></div><div className="field"><label>Nuova password <span className="muted">(opzionale)</span></label><input type="password" minLength={6} value={editForm.password} onChange={e=>setEditForm({...editForm,password:e.target.value})}/></div><div className="field"><label>Ruolo professionale</label><select value={editForm.employment_role} onChange={e=>setEditForm({...editForm,employment_role:e.target.value})}><option value="strutturato">Strutturato</option><option value="calabria">Calabria</option><option value="part_time">Part-time</option></select></div><div className="field"><label>Servizio</label><select value={editForm.service} onChange={e=>setEditForm({...editForm,service:e.target.value})}><option value="anestesia">Anestesia</option><option value="rianimazione">Rianimazione</option></select></div><div className="field"><label>Livello</label><select value={editForm.role} onChange={e=>setEditForm({...editForm,role:e.target.value})}>{me.role==="super_admin"&&<option value="super_admin">Super admin</option>}<option value="admin">Admin</option><option value="utente">Utente</option></select></div><button className="btn btn-primary" disabled={saving}>Salva modifiche</button></form>
     </div></div>}
   </div>
 }
