@@ -8,7 +8,7 @@ import {createClient} from "@/lib/supabase/client";
 import BackButton from "@/app/components/BackButton";
 import {italianNationalHolidayName} from "@/lib/calendar";
 
-type User={id:string;username:string;role:string;service:string};
+type User={id:string;username:string;role:string;employment_role:"strutturato"|"calabria"|"part_time";service:string};
 type Assignment={id:number;user_id:string;shift_date:string;short_name:string;shift_type:string|null;source:string;status:string;notes:string|null};
 type Request={id:number;user_id:string;request_date:string;request_types:string[];notes:string|null;username?:string};
 type Vacation={id:number;user_id:string;start_date:string;end_date:string;notes:string|null;username?:string};
@@ -61,7 +61,7 @@ export default function GenerateShifts(){
     const role=String(p?.role||r||"utente").toLowerCase(); setAuthorized(["admin","super_admin"].includes(role)); if(!["admin","super_admin"].includes(role))return;
     const y=current.getFullYear(),m=current.getMonth(),start=iso(y,m,1),end=iso(y,m,new Date(y,m+1,0).getDate()),prev=iso(y,m,0);
     const [{data:us},{data:ds},{data:as},{data:req},{data:vac},{data:rr}]=await Promise.all([
-      s.from("profiles").select("id,username,role,service").order("username"),
+      s.from("profiles").select("id,username,role,employment_role,service").order("username"),
       s.from("shift_definitions").select("id,shift_type,short_name,duration_minutes").order("short_name"),
       s.from("calendar_shifts").select("*").gte("shift_date",start).lte("shift_date",end).order("shift_date").order("short_name"),
       s.from("requests").select("id,user_id,request_date,request_types,notes").gte("request_date",start).lte("request_date",end),
@@ -127,61 +127,88 @@ export default function GenerateShifts(){
     }catch(err){setError(err instanceof Error?err.message:"Errore durante l'annullamento della convalida.");}finally{setBusy(false);}
   }
 
-  async function generate(){if(!confirm("Generare una nuova bozza automatica per questo mese? I turni manuali non verranno modificati. Le eventuali bozze automatiche precedenti del mese verranno sostituite."))return;setBusy(true);setError("");setMessage("");try{
-    const s=createClient(); const y=current.getFullYear(),m=current.getMonth(),start=iso(y,m,1),end=iso(y,m,new Date(y,m+1,0).getDate()),prev=iso(y,m,0);
-    await s.from("calendar_shifts").delete().eq("source","automatic").eq("status","draft").gte("shift_date",start).lte("shift_date",end);
-    const [{data:manual},{data:old},{data:req},{data:vac}]=await Promise.all([
-      s.from("calendar_shifts").select("*").gte("shift_date",start).lte("shift_date",end),
-      s.from("calendar_shifts").select("*").eq("shift_date",prev),
-      s.from("requests").select("*").gte("request_date",start).lte("request_date",end),
-      s.from("vacations").select("*").or(`start_date.lte.${end},end_date.gte.${start}`)
-    ]);
-    const batch=crypto.randomUUID(); const existing=(manual||[]).filter((a:any)=>a.source==="manual"||a.status==="confirmed");
-    const added: any[]=[]; const has=(uid:string,date:string,code:string)=>existing.concat(added).some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name===code);
-    const any=(uid:string,date:string)=>existing.concat(added).some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name!=="SN");
-    const vacation=(uid:string,date:string)=>((vac||[]) as any[]).some(v=>v.user_id===uid&&v.start_date<=date&&v.end_date>=date);
-    const reqFor=(uid:string,date:string)=>((req||[]) as any[]).find(r=>r.user_id===uid&&r.request_date===date);
-    const restRule=rules.find(r=>r.code==="rest_after_night"&&r.enabled);
-    const canWork=(uid:string,date:string,code:string)=>{
-      if(vacation(uid,date))return false;
-      const r=reqFor(uid,date); if(requestBlocksCode(r,code))return false;
-      if(restRule?.enabled){const d=new Date(date+"T00:00:00");d.setDate(d.getDate()-1);const pd=iso(d.getFullYear(),d.getMonth(),d.getDate());const hadN=existing.concat(added).some(a=>a.user_id===uid&&a.shift_date===pd&&a.short_name==="N")||((old||[]) as any[]).some(a=>a.user_id===uid&&a.short_name==="N");if(hadN)return false;}
-      return !any(uid,date);
-    };
-    const score=(uid:string,date:string,code:string)=>{let n=0;const r=reqFor(uid,date);if(r?.request_types?.includes(code==="N"?"notte":code==="G"?"guardia":code.startsWith("M")?"mattina":"non_lavorare"))n+=100;const prevd=new Date(date+"T00:00:00");prevd.setDate(prevd.getDate()-1);const pd=iso(prevd.getFullYear(),prevd.getMonth(),prevd.getDate());const total=existing.concat(added).filter(a=>a.user_id===uid).length;const sameCode=existing.concat(added).filter(a=>a.user_id===uid&&a.short_name===code).length;const counts=users.map(u=>existing.concat(added).filter(a=>a.user_id===u.id&&a.short_name===code).length);const maxCount=Math.max(0,...counts);n-=total*3;n-=sameCode*25;n-=Math.max(0,maxCount-sameCode)*18;if(existing.concat(added).some(a=>a.user_id===uid&&a.shift_date===pd))n-=8;return n+Math.random();};
-    const add=(uid:string,date:string,code:string)=>{const d=defs.find(x=>x.short_name===code);added.push({user_id:uid,shift_date:date,short_name:code,shift_type:d?.shift_type||null,source:"automatic",status:"draft",generation_batch:batch,notes:null});};
-    for(let day=1;day<=new Date(y,m+1,0).getDate();day++){
-      const date=iso(y,m,day);const weekend=isWeekend(date);const eligible=(code:string)=>users.filter(u=>canWork(u.id,date,code)).sort((a,b)=>score(b.id,date,code)-score(a.id,date,code));
-      const need=weekend?["G","N"]:["M1","M2","M3","G","N"];
-      for(const code of need){if(rules.some(r=>r.code==="weekend_guard"&&!r.enabled)&&weekend&&code==="G")continue;if(rules.some(r=>r.code==="weekend_night"&&!r.enabled)&&weekend&&code==="N")continue;if(!weekend&&code.startsWith("M")&&!rules.some(r=>r.code==="weekday_morning_rooms"&&r.enabled))continue;if(!rules.some(r=>r.code==="daily_guard"&&r.enabled)&&code==="G")continue;if(!rules.some(r=>r.code==="daily_night"&&r.enabled)&&code==="N")continue;const cand=eligible(code).filter(u=>!has(u.id,date,code));
-        if(cand[0])add(cand[0].id,date,code);
-        else{
-          const fallback=users.filter(u=>!has(u.id,date,code)).sort((a,b)=>score(b.id,date,code)-score(a.id,date,code))[0]||users.sort((a,b)=>score(b.id,date,code)-score(a.id,date,code))[0];
-          if(fallback)add(fallback.id,date,code);
-        }}
-      if(restRule?.enabled){for(const u of users){const d0=new Date(date+"T00:00:00");d0.setDate(d0.getDate()-1);const pd=iso(d0.getFullYear(),d0.getMonth(),d0.getDate());const hadN=existing.concat(added).some(a=>a.user_id===u.id&&a.shift_date===pd&&a.short_name==="N")||((old||[]) as any[]).some(a=>a.user_id===u.id&&a.short_name==="N");if(hadN&&!has(u.id,date,"SN")){const sd=defs.find(x=>x.short_name==="SN");added.push({user_id:u.id,shift_date:date,short_name:"SN",shift_type:sd?.shift_type||"Smonto notte",source:"automatic",status:"draft",generation_batch:batch,notes:"Smonto notte automatico"});}}}
-    }
-    if(added.length){const {error:e}=await s.from("calendar_shifts").insert(added);if(e)throw e;}
-    const generated=existing.concat(added);
-    const conflicts=new Map<string,string[]>();
-    const addConflict=(date:string,detail:string)=>conflicts.set(date,[...(conflicts.get(date)||[]),detail]);
-    for(const a of generated){
-      if(a.source!=="automatic"&&a.status!=="draft")continue;
-      const vacHit=((vac||[]) as any[]).find(v=>v.user_id===a.user_id&&v.start_date<=a.shift_date&&v.end_date>=a.shift_date);
-      const reqHit=((req||[]) as any[]).find(r=>r.user_id===a.user_id&&r.request_date===a.shift_date&&requestBlocksCode(r,a.short_name));
-      const username=users.find(u=>u.id===a.user_id)?.username||"Utente";
-      if(vacHit)addConflict(a.shift_date,`${username}: ferie`);
-      if(reqHit)addConflict(a.shift_date,`${username}: desiderata`);
-    }
-    const criticalDates=[...conflicts.keys()].sort();
-    setConflictDates(criticalDates);
-    setMessage(`Bozza generata: ${added.length} assegnazioni. I turni manuali sono stati mantenuti.`);
-    await load();
-    if(criticalDates.length){
-      window.alert("ATTENZIONE: non è stato possibile rispettare tutti i vincoli di ferie/desiderate.\\n\\nDate critiche:\\n"+criticalDates.map(d=>fmtDate(d)+" — "+[...new Set(conflicts.get(d)||[])].join(", ")).join("\\n")+"\\n\\nSono stati comunque proposti i turni necessari. Le giornate critiche sono evidenziate in rosso nel calendario.");
-    }
-    window.location.reload();
-  }catch(e){setError(e instanceof Error?e.message:"Errore durante la generazione automatica.");}finally{setBusy(false)}}
+  async function generate(){
+    if(!confirm("Generare una nuova bozza automatica per questo mese? I turni manuali non verranno modificati. Le eventuali bozze automatiche precedenti del mese verranno sostituite."))return;
+    setBusy(true);setError("");setMessage("");
+    try{
+      const s=createClient();
+      const y=current.getFullYear(),m=current.getMonth(),daysInMonth=new Date(y,m+1,0).getDate();
+      const startDate=iso(y,m,1),endDate=iso(y,m,daysInMonth),prev=iso(y,m,0);
+      await s.from("calendar_shifts").delete().eq("source","automatic").eq("status","draft").gte("shift_date",startDate).lte("shift_date",endDate);
+      const [{data:manual},{data:old},{data:req},{data:vac}]=await Promise.all([
+        s.from("calendar_shifts").select("*").gte("shift_date",startDate).lte("shift_date",endDate),
+        s.from("calendar_shifts").select("*").eq("shift_date",prev),
+        s.from("requests").select("*").gte("request_date",startDate).lte("request_date",endDate),
+        s.from("vacations").select("*").or(`start_date.lte.${endDate},end_date.gte.${startDate}`)
+      ]);
+      const batch=crypto.randomUUID();
+      const existing=(manual||[]).filter((a:any)=>a.source==="manual"||a.status==="confirmed");
+      const added:any[]=[];
+      const conflicts=new Map<string,string[]>();
+      const allAssignments=()=>existing.concat(added);
+      const conflict=(date:string,msg:string)=>conflicts.set(date,[...(conflicts.get(date)||[]),msg]);
+      const has=(uid:string,date:string,code:string)=>allAssignments().some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name===code);
+      const hasAnyWork=(uid:string,date:string)=>allAssignments().some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name!=="SN");
+      const vacation=(uid:string,date:string)=>((vac||[]) as any[]).some(v=>v.user_id===uid&&v.start_date<=date&&v.end_date>=date);
+      const reqFor=(uid:string,date:string)=>((req||[]) as any[]).find(r=>r.user_id===uid&&r.request_date===date);
+      const enabled=(code:string)=>rules.some(r=>r.code===code&&r.enabled);
+      const textRule=(needle:string)=>rules.find(r=>r.enabled&&(`${r.name} ${r.description}`).toLowerCase().includes(needle.toLowerCase()));
+      const restRule=rules.find(r=>r.code==="rest_after_night"&&r.enabled);
+      const partTimeRule=textRule("part time");
+      const partTimeText=partTimeRule?`${partTimeRule.name} ${partTimeRule.description}`.toLowerCase():"";
+      const partTimeDaysLimited=!!partTimeRule&&/solo dal lunedì al mercoledì|solo dal lunedi al mercoledi|lunedì al mercoledì|lunedi al mercoledi/.test(partTimeText);
+      const partTimeNoGN=!!rules.find(r=>r.enabled&&/part time/i.test(`${r.name} ${r.description}`)&&/non fanno guardia o notte|non fanno guardia.*notte/i.test(`${r.name} ${r.description}`));
+      const mo1Rule=rules.find(r=>r.enabled&&/mo1/i.test(`${r.name} ${r.description}`));
+      const mo1User=mo1Rule?users.find(u=>mo1Rule.description.toLowerCase().includes(u.username.toLowerCase())||mo1Rule.description.toLowerCase().includes(u.username.replaceAll("_"," ").toLowerCase())):undefined;
+      const rissottiRule=rules.find(r=>r.enabled&&/rissotti/i.test(`${r.name} ${r.description}`));
+      const rissottiUser=users.find(u=>/rissotti/i.test(u.username));
+      const endoscopyRule=rules.find(r=>r.enabled&&/endoscopia/i.test(`${r.name} ${r.description}`));
+      const duration=(code:string)=>Number(defs.find(d=>d.short_name===code)?.duration_minutes||0)/60;
+      const roleRate=(u:User)=>u.employment_role==="calabria"?6.4:u.employment_role==="part_time"?8:7.6;
+      const targetHours=(u:User)=>{let h=0;for(let d=1;d<=daysInMonth;d++){const date=iso(y,m,d),dow=new Date(date+"T00:00:00").getDay();if(dow===0||dow===6||italianNationalHolidayName(date))continue;if(u.employment_role==="part_time"&&partTimeDaysLimited&&!([1,2,3].includes(dow)))continue;h+=roleRate(u);}return h;};
+      const currentHours=(uid:string)=>allAssignments().filter(a=>a.user_id===uid).reduce((sum,a)=>sum+duration(a.short_name),0);
+      const previousDay=(date:string)=>{const d=new Date(date+"T00:00:00");d.setDate(d.getDate()-1);return iso(d.getFullYear(),d.getMonth(),d.getDate());};
+      const hadNight=(uid:string,date:string)=>allAssignments().some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name==="N")||((old||[]) as any[]).some(a=>a.user_id===uid&&a.short_name==="N");
+      const hardBlocked=(u:User,date:string,code:string)=>{
+        if(u.service!=="anestesia")return true;
+        if(vacation(u.id,date)||requestBlocksCode(reqFor(u.id,date),code))return true;
+        const dow=new Date(date+"T00:00:00").getDay(),weekend=dow===0||dow===6,holiday=!!italianNationalHolidayName(date);
+        if(u.employment_role==="part_time"&&partTimeDaysLimited&&!([1,2,3].includes(dow)))return true;
+        if(u.employment_role==="part_time"&&partTimeNoGN&&["G","N"].includes(code))return true;
+        if(rissottiRule&&rissottiUser?.id===u.id&&["G","N"].includes(code))return true;
+        if(mo1Rule&&mo1User&&code==="Mo1"&&u.id!==mo1User.id)return true;
+        if(mo1Rule&&mo1User&&code!=="Mo1"&&u.id===mo1User.id)return true;
+        if(endoscopyRule&&code==="E"&&dow!==4)return true;
+        if(restRule&&hadNight(u.id,previousDay(date)))return true;
+        if(hasAnyWork(u.id,date))return true;
+        if((weekend||holiday)&&["M1","M2","M3","Mo1","Mo2","MRia"].includes(code))return true;
+        return false;
+      };
+      const score=(u:User,date:string,code:string)=>{const target=targetHours(u),projected=currentHours(u.id)+duration(code);let n=(target-projected)*8;const sameCode=allAssignments().filter(a=>a.user_id===u.id&&a.short_name===code).length;const counts=users.filter(x=>x.service==="anestesia").map(x=>allAssignments().filter(a=>a.user_id===x.id&&a.short_name===code).length);n-=sameCode*30;n-=Math.max(0,(Math.max(0,...counts))-sameCode)*10;const pd=previousDay(date);if(allAssignments().some(a=>a.user_id===u.id&&a.shift_date===pd))n-=12;return n+Math.random();};
+      const add=(u:User,date:string,code:string,notes?:string)=>{const d=defs.find(x=>x.short_name===code);if(!d)return false;added.push({user_id:u.id,shift_date:date,short_name:code,shift_type:d.shift_type||null,source:"automatic",status:"draft",generation_batch:batch,notes:notes||null});return true;};
+      const choose=(date:string,code:string)=>users.filter(u=>!hardBlocked(u,date,code)).sort((a,b)=>score(b,date,code)-score(a,date,code))[0]||null;
+      for(let day=1;day<=daysInMonth;day++){
+        const date=iso(y,m,day),dow=new Date(date+"T00:00:00").getDay(),weekend=dow===0||dow===6,holiday=!!italianNationalHolidayName(date);
+        if(mo1Rule&&mo1User&&!weekend&&!holiday){if(!hardBlocked(mo1User,date,"Mo1"))add(mo1User,date,"Mo1","Vincolo automatico: Mo1");else conflict(date,`Mo1 non assegnabile a ${mo1User.username}`);}
+        if(endoscopyRule&&dow===4&&!holiday){const e=choose(date,"E");if(e)add(e,date,"E","Vincolo automatico: Endoscopia");else conflict(date,"Endoscopia E non assegnabile");}
+        const required:string[]=weekend?[]:["M1","M2","M3"];
+        if(enabled("daily_guard")&&!holiday)required.push("G");
+        if(enabled("daily_night"))required.push("N");
+        if(weekend&&enabled("weekend_guard")&&!holiday)required.push("G");
+        if(weekend&&enabled("weekend_night"))required.push("N");
+        for(const code of required){if(code==="G"&&weekend&&!enabled("weekend_guard"))continue;if(code==="N"&&weekend&&!enabled("weekend_night"))continue;if(code.startsWith("M")&&!enabled("weekday_morning_rooms"))continue;const u=choose(date,code);if(u)add(u,date,code);else conflict(date,`Nessun candidato valido per ${code}`);}
+        if(restRule){for(const u of users.filter(x=>x.service==="anestesia")){if(hadNight(u.id,date)&&day<daysInMonth){const next=iso(y,m,day+1);if(!has(u.id,next,"SN")&&!vacation(u.id,next))add(u,next,"SN","Smonto notte automatico");}}}
+      }
+      if(added.length){const {error:e}=await s.from("calendar_shifts").insert(added);if(e)throw e;}
+      for(const a of allAssignments()){if(a.source!=="automatic"&&a.status!=="draft")continue;const vacHit=((vac||[]) as any[]).find(v=>v.user_id===a.user_id&&v.start_date<=a.shift_date&&v.end_date>=a.shift_date);const reqHit=((req||[]) as any[]).find(r=>r.user_id===a.user_id&&r.request_date===a.shift_date&&requestBlocksCode(r,a.short_name));const username=users.find(u=>u.id===a.user_id)?.username||"Utente";if(vacHit)conflict(a.shift_date,`${username}: ferie`);if(reqHit)conflict(a.shift_date,`${username}: desiderata`);}
+      const criticalDates=[...conflicts.keys()].sort();
+      setConflictDates(criticalDates);
+      setMessage(`Bozza generata: ${added.length} assegnazioni. Vincoli e ruoli professionali applicati.`);
+      await load();
+      if(criticalDates.length)window.alert("ATTENZIONE: alcuni vincoli non sono soddisfacibili con i dati disponibili.\\n\\nDate critiche:\\n"+criticalDates.map(d=>fmtDate(d)+" — "+[...new Set(conflicts.get(d)||[])].join(", ")).join("\\n")+"\\n\\nLe giornate critiche sono evidenziate in rosso nel calendario.");
+      window.location.reload();
+    }catch(e){setError(e instanceof Error?e.message:"Errore durante la generazione automatica.");}finally{setBusy(false)}
+  }
 
   if(authorized===null)return <main className="auth"><div>Caricamento…</div></main>;
   if(!authorized)return <main className="auth"><section className="auth-card"><h1 className="title">Accesso negato</h1><p className="sub">Questa sezione è riservata agli amministratori.</p><Link className="link" href="/dashboard">Torna alla dashboard</Link></section></main>;
