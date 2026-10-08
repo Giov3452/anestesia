@@ -83,3 +83,12 @@
 .generator-clear-link:hover{background:#fff0ee;border-color:#e98f86}
 .generator-clear-link:disabled{opacity:.5;cursor:wait}
 @media(max-width:800px){.generator-clear-link{text-align:left;padding:8px 0;border:0;background:none;border-radius:0}}
+
+
+/* Uniformazione navigazione pagine di programmazione */
+.page-action-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:#f8fafc;color:var(--navy);font-size:13px;font-weight:750;white-space:nowrap;transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease}
+.page-action-link:hover{background:#eef3fb;border-color:#c5d5ef;color:var(--blue);transform:translateY(-1px)}
+.page-action-link:focus-visible{outline:3px solid #1d5fd130;outline-offset:2px}
+.generator-links .generator-auto-link{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;background:#f8fafc;color:var(--navy);font-size:13px;font-weight:750;white-space:nowrap;transition:background .18s ease,border-color .18s ease,color .18s ease,transform .18s ease}
+.generator-links .generator-auto-link:hover{background:#eef3fb;border-color:#c5d5ef;color:var(--blue);transform:translateY(-1px)}
+@media(max-width:800px){.page-action-link,.generator-links .generator-auto-link{justify-content:flex-start;width:100%;min-height:0;padding:8px 0;border:0;background:none;border-radius:0}.page-action-link:hover,.generator-links .generator-auto-link:hover{background:none;border:0;transform:none}}
