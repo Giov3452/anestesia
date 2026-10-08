@@ -163,6 +163,7 @@ export default function GenerateShifts(){
       const rissottiRule=rules.find(r=>r.enabled&&/rissotti/i.test(`${r.name} ${r.description}`));
       const rissottiUser=users.find(u=>/rissotti/i.test(u.username));
       const endoscopyRule=rules.find(r=>r.enabled&&/endoscopia/i.test(`${r.name} ${r.description}`));
+      const ftRule=rules.find(r=>r.enabled&&/\bft\b/i.test(`${r.name} ${r.description}`));
       const duration=(code:string)=>Number(defs.find(d=>d.short_name===code)?.duration_minutes||0)/60;
       const roleRate=(u:User)=>u.employment_role==="calabria"?6.4:u.employment_role==="part_time"?8:7.6;
       const targetHours=(u:User)=>{let h=0;for(let d=1;d<=daysInMonth;d++){const date=iso(y,m,d),dow=new Date(date+"T00:00:00").getDay();if(dow===0||dow===6||italianNationalHolidayName(date))continue;if(u.employment_role==="part_time"&&partTimeDaysLimited&&!([1,2,3].includes(dow)))continue;h+=roleRate(u);}return h;};
@@ -179,6 +180,7 @@ export default function GenerateShifts(){
         if(mo1Rule&&mo1User&&code==="Mo1"&&u.id!==mo1User.id)return true;
         if(mo1Rule&&mo1User&&code!=="Mo1"&&u.id===mo1User.id)return true;
         if(endoscopyRule&&code==="E"&&dow!==4)return true;
+        if(ftRule&&code==="FT"&&(dow===0||dow===6))return true;
         if(restRule&&hadNight(u.id,previousDay(date)))return true;
         if(hasAnyWork(u.id,date))return true;
         if((weekend||holiday)&&["M1","M2","M3","Mo1","Mo2","MRia"].includes(code))return true;
@@ -192,6 +194,7 @@ export default function GenerateShifts(){
         if(mo1Rule&&mo1User&&!weekend&&!holiday){if(!hardBlocked(mo1User,date,"Mo1"))add(mo1User,date,"Mo1","Vincolo automatico: Mo1");else conflict(date,`Mo1 non assegnabile a ${mo1User.username}`);}
         if(endoscopyRule&&dow===4&&!holiday){const e=choose(date,"E");if(e)add(e,date,"E","Vincolo automatico: Endoscopia");else conflict(date,"Endoscopia E non assegnabile");}
         const required:string[]=weekend?[]:["M1","M2","M3"];
+        if(ftRule&&!weekend&&dow>=1&&dow<=5)required.push("FT");
         // G e N sono richiesti una sola volta al giorno. Le regole weekend
         // definiscono la copertura del weekend, non aggiungono una seconda G/N.
         if(weekend){
