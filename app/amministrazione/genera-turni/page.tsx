@@ -171,7 +171,9 @@ export default function GenerateShifts(){
       const weekendShiftCount=(uid:string)=>allAssignments().filter(a=>{if(a.user_id!==uid||a.short_name==="SN")return false;const dow=new Date(a.shift_date+"T00:00:00").getDay();return dow===0||dow===6;}).length;
       const roleRate=(u:User)=>u.employment_role==="calabria"?6.4:u.employment_role==="part_time"?8:7.6;
       const targetHours=(u:User)=>{let h=0;for(let d=1;d<=daysInMonth;d++){const date=iso(y,m,d),dow=new Date(date+"T00:00:00").getDay();if(dow===0||dow===6||italianNationalHolidayName(date))continue;if(u.employment_role==="part_time"&&partTimeDaysLimited&&!([1,2,3].includes(dow)))continue;h+=roleRate(u);}return h;};
-      const currentHours=(uid:string)=>allAssignments().filter(a=>a.user_id===uid).reduce((sum,a)=>sum+duration(a.short_name),0);
+      const canoviUser=users.find(u=>/mariangela_canovi/i.test(u.username));
+      const hasAnyRequest=(uid:string,date:string)=>((req||[]) as any[]).some(r=>r.user_id===uid&&r.request_date===date);
+      const currentHours=(uid:string)=>allAssignments().filter(a=>a.user_id===uid&&!["SN","RC","RG","RN","RP","R","Rp"].includes(a.short_name)).reduce((sum,a)=>sum+duration(a.short_name),0);
       const previousDay=(date:string)=>{const d=new Date(date+"T00:00:00");d.setDate(d.getDate()-1);return iso(d.getFullYear(),d.getMonth(),d.getDate());};
       const hadNight=(uid:string,date:string)=>allAssignments().some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name==="N")||((old||[]) as any[]).some(a=>a.user_id===uid&&a.short_name==="N");
       const hardBlocked=(u:User,date:string,code:string)=>{
@@ -193,7 +195,11 @@ export default function GenerateShifts(){
       const score=(u:User,date:string,code:string)=>{const target=targetHours(u),projected=currentHours(u.id)+duration(code);let n=(target-projected)*8;const sameCode=allAssignments().filter(a=>a.user_id===u.id&&a.short_name===code).length;const counts=users.filter(x=>x.service==="anestesia").map(x=>allAssignments().filter(a=>a.user_id===x.id&&a.short_name===code).length);n-=sameCode*30;n-=Math.max(0,(Math.max(0,...counts))-sameCode)*10;const pd=previousDay(date);if(allAssignments().some(a=>a.user_id===u.id&&a.shift_date===pd))n-=12;const dow=new Date(date+"T00:00:00").getDay(),weekend=dow===0||dow===6;if(weekend&&weekendFairnessRule){const candidates=users.filter(x=>!hardBlocked(x,date,code));const minWeekend=Math.min(...candidates.map(x=>weekendCount(x.id)),weekendCount(u.id));n-=(weekendCount(u.id)-minWeekend)*120;n-=weekendShiftCount(u.id)*20;}return n+Math.random();};
       const add=(u:User,date:string,code:string,notes?:string)=>{const d=defs.find(x=>x.short_name===code);if(!d)return false;added.push({user_id:u.id,shift_date:date,short_name:code,shift_type:d.shift_type||null,source:"automatic",status:"draft",generation_batch:batch,notes:notes||null});return true;};
       const choose=(date:string,code:string)=>users.filter(u=>!hardBlocked(u,date,code)).sort((a,b)=>score(b,date,code)-score(a,date,code))[0]||null;
-      for(let day=1;day<=daysInMonth;day++){
+      // Multi-start optimization: generate several valid candidate calendars and retain the one
+      // that best balances theoretical hours, weekend duties and shift types. Hard constraints are
+      // enforced during every candidate build; unresolved assignments carry a very large penalty.
+      const generationLoop = () => {
+        for(let day=1;day<=daysInMonth;day++){
         const date=iso(y,m,day),dow=new Date(date+"T00:00:00").getDay(),weekend=dow===0||dow===6,holiday=!!italianNationalHolidayName(date);
         if(mo1Rule&&mo1User&&!weekend&&!holiday){if(!hardBlocked(mo1User,date,"Mo1"))add(mo1User,date,"Mo1","Vincolo automatico: Mo1");else conflict(date,`Mo1 non assegnabile a ${mo1User.username}`);}
         if(endoscopyRule&&dow===4&&!holiday){const e=choose(date,"E");if(e)add(e,date,"E","Vincolo automatico: Endoscopia");else conflict(date,"Endoscopia E non assegnabile");}
@@ -208,13 +214,54 @@ export default function GenerateShifts(){
           if(enabled("daily_guard")&&!holiday)required.push("G");
           if(enabled("daily_night"))required.push("N");
         }
+        // Presenza obbligatoria della part-time Mariangela Canovi lunedì, martedì e mercoledì,
+        // salvo ferie o qualsiasi desiderata registrata per quella data. Le assegniamo una sala
+        // mattutina prima di distribuire le altre sale, senza sovrascrivere turni manuali esistenti.
+        const canoviMustWork=!!canoviUser&&canoviUser.employment_role==="part_time"&&[1,2,3].includes(dow)&&!vacation(canoviUser.id,date)&&!hasAnyRequest(canoviUser.id,date);
+        if(canoviMustWork&&!hasAnyWork(canoviUser!.id,date)){
+          const canoviRoom=["M1","M2","M3"].find(code=>enabled("weekday_morning_rooms")&&!allAssignments().some(a=>a.shift_date===date&&a.short_name===code)&&!hardBlocked(canoviUser!,date,code));
+          if(canoviRoom)add(canoviUser!,date,canoviRoom,"Vincolo part-time: presenza obbligatoria lunedì-mercoledì");
+          else conflict(date,"Presenza obbligatoria di Mariangela Canovi non assegnabile: nessuna sala mattutina disponibile");
+        }
         for(const code of required){
+          if(allAssignments().some(a=>a.shift_date===date&&a.short_name===code))continue;
           if(code.startsWith("M")&&!enabled("weekday_morning_rooms"))continue;
           const u=choose(date,code);
           if(u)add(u,date,code);else conflict(date,`Nessun candidato valido per ${code}`);
         }
         if(restRule){for(const u of users.filter(x=>x.service==="anestesia")){if(hadNight(u.id,date)&&day<daysInMonth){const next=iso(y,m,day+1);if(!has(u.id,next,"SN")&&!vacation(u.id,next)){if(hasAnyWork(u.id,next))conflict(next,`${u.username}: smonto notte non inseribile perché il giorno successivo contiene già un turno`);else add(u,next,"SN","Smonto notte automatico");}}}}
       }
+      };
+      let bestAssignments:any[]=[];
+      let bestConflictEntries:[string,string[]][]=[];
+      let bestObjective=Number.POSITIVE_INFINITY;
+      for(let attempt=0;attempt<30;attempt++){
+        added.length=0;conflicts.clear();
+        generationLoop();
+        let objective=0;
+        for(const u of users.filter(x=>x.service==="anestesia")){
+          const target=targetHours(u);
+          const delta=currentHours(u.id)-target;
+          objective+=Math.pow(delta/Math.max(target,40),2)*1000;
+        }
+        const weekendEligible=users.filter(u=>u.service==="anestesia"&&u.employment_role!=="part_time"&&u.id!==rissottiUser?.id);
+        if(weekendEligible.length){
+          const counts=weekendEligible.map(u=>weekendCount(u.id));
+          const avg=counts.reduce((a,b)=>a+b,0)/counts.length;
+          objective+=counts.reduce((sum,n)=>sum+Math.pow(n-avg,2),0)*250;
+        }
+        for(const code of ["G","N","M1","M2","M3","FT","E"]){
+          const eligible=users.filter(u=>u.service==="anestesia"&&( !["G","N"].includes(code)|| (u.employment_role!=="part_time"&&u.id!==rissottiUser?.id) ));
+          if(eligible.length<2)continue;
+          const counts=eligible.map(u=>allAssignments().filter(a=>a.user_id===u.id&&a.short_name===code).length);
+          const avg=counts.reduce((a,b)=>a+b,0)/counts.length;
+          objective+=counts.reduce((sum,n)=>sum+Math.pow(n-avg,2),0)*18;
+        }
+        objective+=conflicts.size*100000;
+        if(objective<bestObjective){bestObjective=objective;bestAssignments=added.slice();bestConflictEntries=Array.from(conflicts.entries()).map(([date,msgs])=>[date,msgs.slice()]);}
+      }
+      added.splice(0,added.length,...bestAssignments);
+      conflicts.clear();for(const [date,msgs] of bestConflictEntries)conflicts.set(date,msgs);
       if(added.length){const {error:e}=await s.from("calendar_shifts").insert(added);if(e)throw e;}
       for(const a of allAssignments()){if(a.source!=="automatic"&&a.status!=="draft")continue;const vacHit=((vac||[]) as any[]).find(v=>v.user_id===a.user_id&&v.start_date<=a.shift_date&&v.end_date>=a.shift_date);const reqHit=((req||[]) as any[]).find(r=>r.user_id===a.user_id&&r.request_date===a.shift_date&&requestBlocksCode(r,a.short_name));const username=users.find(u=>u.id===a.user_id)?.username||"Utente";if(vacHit)conflict(a.shift_date,`${username}: ferie`);if(reqHit)conflict(a.shift_date,`${username}: desiderata`);}
       const criticalDates=[...conflicts.keys()].sort();
