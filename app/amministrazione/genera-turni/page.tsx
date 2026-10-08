@@ -164,7 +164,11 @@ export default function GenerateShifts(){
       const rissottiUser=users.find(u=>/rissotti/i.test(u.username));
       const endoscopyRule=rules.find(r=>r.enabled&&/endoscopia/i.test(`${r.name} ${r.description}`));
       const ftRule=rules.find(r=>r.enabled&&/\bft\b/i.test(`${r.name} ${r.description}`));
+      const weekendFairnessRule=rules.find(r=>r.enabled&&(/weekend/i.test(`${r.name} ${r.description}`)||/fine settimana/i.test(`${r.name} ${r.description}`)));
       const duration=(code:string)=>Number(defs.find(d=>d.short_name===code)?.duration_minutes||0)/60;
+      const weekendKey=(date:string)=>{const d=new Date(date+"T00:00:00"),dow=d.getDay();if(dow===0)d.setDate(d.getDate()-1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+      const weekendCount=(uid:string)=>{const keys=new Set<string>();for(const a of allAssignments()){if(a.user_id!==uid||a.short_name==="SN")continue;const dow=new Date(a.shift_date+"T00:00:00").getDay();if(dow===0||dow===6)keys.add(weekendKey(a.shift_date));}return keys.size;};
+      const weekendShiftCount=(uid:string)=>allAssignments().filter(a=>{if(a.user_id!==uid||a.short_name==="SN")return false;const dow=new Date(a.shift_date+"T00:00:00").getDay();return dow===0||dow===6;}).length;
       const roleRate=(u:User)=>u.employment_role==="calabria"?6.4:u.employment_role==="part_time"?8:7.6;
       const targetHours=(u:User)=>{let h=0;for(let d=1;d<=daysInMonth;d++){const date=iso(y,m,d),dow=new Date(date+"T00:00:00").getDay();if(dow===0||dow===6||italianNationalHolidayName(date))continue;if(u.employment_role==="part_time"&&partTimeDaysLimited&&!([1,2,3].includes(dow)))continue;h+=roleRate(u);}return h;};
       const currentHours=(uid:string)=>allAssignments().filter(a=>a.user_id===uid).reduce((sum,a)=>sum+duration(a.short_name),0);
@@ -186,7 +190,7 @@ export default function GenerateShifts(){
         if((weekend||holiday)&&["M1","M2","M3","Mo1","Mo2","MRia"].includes(code))return true;
         return false;
       };
-      const score=(u:User,date:string,code:string)=>{const target=targetHours(u),projected=currentHours(u.id)+duration(code);let n=(target-projected)*8;const sameCode=allAssignments().filter(a=>a.user_id===u.id&&a.short_name===code).length;const counts=users.filter(x=>x.service==="anestesia").map(x=>allAssignments().filter(a=>a.user_id===x.id&&a.short_name===code).length);n-=sameCode*30;n-=Math.max(0,(Math.max(0,...counts))-sameCode)*10;const pd=previousDay(date);if(allAssignments().some(a=>a.user_id===u.id&&a.shift_date===pd))n-=12;return n+Math.random();};
+      const score=(u:User,date:string,code:string)=>{const target=targetHours(u),projected=currentHours(u.id)+duration(code);let n=(target-projected)*8;const sameCode=allAssignments().filter(a=>a.user_id===u.id&&a.short_name===code).length;const counts=users.filter(x=>x.service==="anestesia").map(x=>allAssignments().filter(a=>a.user_id===x.id&&a.short_name===code).length);n-=sameCode*30;n-=Math.max(0,(Math.max(0,...counts))-sameCode)*10;const pd=previousDay(date);if(allAssignments().some(a=>a.user_id===u.id&&a.shift_date===pd))n-=12;const dow=new Date(date+"T00:00:00").getDay(),weekend=dow===0||dow===6;if(weekend&&weekendFairnessRule){const candidates=users.filter(x=>!hardBlocked(x,date,code));const minWeekend=Math.min(...candidates.map(x=>weekendCount(x.id)),weekendCount(u.id));n-=(weekendCount(u.id)-minWeekend)*120;n-=weekendShiftCount(u.id)*20;}return n+Math.random();};
       const add=(u:User,date:string,code:string,notes?:string)=>{const d=defs.find(x=>x.short_name===code);if(!d)return false;added.push({user_id:u.id,shift_date:date,short_name:code,shift_type:d.shift_type||null,source:"automatic",status:"draft",generation_batch:batch,notes:notes||null});return true;};
       const choose=(date:string,code:string)=>users.filter(u=>!hardBlocked(u,date,code)).sort((a,b)=>score(b,date,code)-score(a,date,code))[0]||null;
       for(let day=1;day<=daysInMonth;day++){
