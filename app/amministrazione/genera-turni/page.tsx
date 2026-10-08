@@ -197,7 +197,7 @@ export default function GenerateShifts(){
         if(weekend&&enabled("weekend_guard")&&!holiday)required.push("G");
         if(weekend&&enabled("weekend_night"))required.push("N");
         for(const code of required){if(code==="G"&&weekend&&!enabled("weekend_guard"))continue;if(code==="N"&&weekend&&!enabled("weekend_night"))continue;if(code.startsWith("M")&&!enabled("weekday_morning_rooms"))continue;const u=choose(date,code);if(u)add(u,date,code);else conflict(date,`Nessun candidato valido per ${code}`);}
-        if(restRule){for(const u of users.filter(x=>x.service==="anestesia")){if(hadNight(u.id,date)&&day<daysInMonth){const next=iso(y,m,day+1);if(!has(u.id,next,"SN")&&!vacation(u.id,next))add(u,next,"SN","Smonto notte automatico");}}}
+        if(restRule){for(const u of users.filter(x=>x.service==="anestesia")){if(hadNight(u.id,date)&&day<daysInMonth){const next=iso(y,m,day+1);if(!has(u.id,next,"SN")&&!vacation(u.id,next)){if(hasAnyWork(u.id,next))conflict(next,`${u.username}: smonto notte non inseribile perché il giorno successivo contiene già un turno`);else add(u,next,"SN","Smonto notte automatico");}}}}
       }
       if(added.length){const {error:e}=await s.from("calendar_shifts").insert(added);if(e)throw e;}
       for(const a of allAssignments()){if(a.source!=="automatic"&&a.status!=="draft")continue;const vacHit=((vac||[]) as any[]).find(v=>v.user_id===a.user_id&&v.start_date<=a.shift_date&&v.end_date>=a.shift_date);const reqHit=((req||[]) as any[]).find(r=>r.user_id===a.user_id&&r.request_date===a.shift_date&&requestBlocksCode(r,a.short_name));const username=users.find(u=>u.id===a.user_id)?.username||"Utente";if(vacHit)conflict(a.shift_date,`${username}: ferie`);if(reqHit)conflict(a.shift_date,`${username}: desiderata`);}
