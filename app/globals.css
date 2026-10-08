@@ -77,3 +77,9 @@
   .dashboard-calendar .day{min-height:72px}
   .dashboard-calendar .shift{font-size:9px;padding:4px}
 }
+
+
+.generator-clear-link{border:1px solid #f0b4ae;background:#fff7f6;color:#b42318;border-radius:9px;padding:7px 10px;font-weight:800;cursor:pointer;font-size:13px}
+.generator-clear-link:hover{background:#fff0ee;border-color:#e98f86}
+.generator-clear-link:disabled{opacity:.5;cursor:wait}
+@media(max-width:800px){.generator-clear-link{text-align:left;padding:8px 0;border:0;background:none;border-radius:0}}
