@@ -26,7 +26,7 @@ function dateKey(year:number,month:number,day:number){
 export default async function Dashboard(){
   const s=await createClient();
   const {data:{user}}=await s.auth.getUser();
-  if(!user)redirect("/login");
+  if(!user) redirect("/login");
 
   const {data:p}=await s.from("profiles").select("username").eq("id",user.id).single();
   const now=new Date();
@@ -47,33 +47,37 @@ export default async function Dashboard(){
     return acc;
   },{});
 
-  return <div className="shell">
-    <header className="appbar"><div className="brand"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</div><UserMenu/></header>
+  return <div className="shell dashboard-shell">
+    <header className="appbar">
+      <div className="brand"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</div>
+      <UserMenu/>
+    </header>
 
-    <main className="main">
-      <div className="hero">
-        <div>
-          <p className="eyebrow">Area personale</p>
-          <h1 className="title">Ciao, {name}</h1>
-          <p className="sub">Qui trovi direttamente il tuo calendario dei turni.</p>
-        </div>
-      </div>
+    <main className="main dashboard-main">
+      <section className="dashboard-intro">
+        <p className="eyebrow">Area personale</p>
+        <h1 className="title">Ciao, {name}</h1>
+        <p className="sub">Qui trovi direttamente il tuo calendario dei turni.</p>
+      </section>
 
-      <section className="calendar-card">
+      <section className="calendar-card dashboard-calendar-card">
         <div className="calendar-head">
           <div>
             <p className="eyebrow">Programmazione personale</p>
             <h2>{monthName.charAt(0).toUpperCase()+monthName.slice(1)}</h2>
           </div>
-          <span className="calendar-count">{validated ? `${shifts?.length||0} turni` : "Non convalidati"}</span>
+          <span className={`calendar-count ${validated?"validated":"pending"}`}>
+            {validated ? `${shifts?.length||0} turni` : "Non convalidati"}
+          </span>
         </div>
+
         {!validated ? (
-          <div className="card" style={{margin:0,textAlign:"center"}}>
+          <div className="dashboard-empty-state">
             <h3>Turni non ancora convalidati</h3>
-            <p className="muted">I tuoi turni personali saranno visibili qui dopo la convalida dei turni del mese da parte dell'amministrazione.</p>
+            <p>I tuoi turni personali saranno visibili qui dopo la convalida dei turni del mese da parte dell'amministrazione.</p>
           </div>
         ) : (
-          <div className="calendar">
+          <div className="calendar dashboard-calendar">
             {weekdays.map(day=><div className="dow" key={day}>{day}</div>)}
             {cells.map((day,index)=>{
               if(!day) return <div className="day empty" key={`empty-${index}`}/>;
