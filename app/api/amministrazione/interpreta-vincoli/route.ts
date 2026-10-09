@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     const content = payload.choices?.[0]?.message?.content;
     if (!content) throw new Error("Il servizio AI non ha restituito regole.");
     const compiled = JSON.parse(content) as {rules:{id:number;parsedRule:ParsedGeneratorRule}[]};
-    const byId = new Map((compiled.rules || []).map(item=>[item.id,item.parsedRule]));
+    const byId = new Map<number,ParsedGeneratorRule>((compiled.rules || []).map(item=>[item.id,item.parsedRule] as const));
     const results:any[] = [];
     for (const constraint of active as any[]) {
       const parsed = byId.get(constraint.id);
