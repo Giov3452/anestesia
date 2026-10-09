@@ -159,6 +159,7 @@ export default function GenerateShifts(){
       const partTimeDaysLimited=!!partTimeRule&&/solo dal lunedì al mercoledì|solo dal lunedi al mercoledi|lunedì al mercoledì|lunedi al mercoledi/.test(partTimeText);
       const partTimeNoGN=!!rules.find(r=>r.enabled&&/part time/i.test(`${r.name} ${r.description}`)&&/non fanno guardia o notte|non fanno guardia.*notte/i.test(`${r.name} ${r.description}`));
       const mo1Rule=rules.find(r=>r.enabled&&/mo1/i.test(`${r.name} ${r.description}`));
+      const mo2Rule=rules.find(r=>r.enabled&&/mo2/i.test(`${r.name} ${r.description}`));
       const mo1User=mo1Rule?users.find(u=>mo1Rule.description.toLowerCase().includes(u.username.toLowerCase())||mo1Rule.description.toLowerCase().includes(u.username.replaceAll("_"," ").toLowerCase())):undefined;
       const rissottiRule=rules.find(r=>r.enabled&&/rissotti/i.test(`${r.name} ${r.description}`));
       const rissottiUser=users.find(u=>/rissotti/i.test(u.username));
@@ -185,6 +186,7 @@ export default function GenerateShifts(){
         if(rissottiRule&&rissottiUser?.id===u.id&&["G","N"].includes(code))return true;
         if(mo1Rule&&mo1User&&code==="Mo1"&&u.id!==mo1User.id)return true;
         if(mo1Rule&&mo1User&&code!=="Mo1"&&u.id===mo1User.id)return true;
+        if(mo2Rule&&code==="Mo2"&&!(dow>=1&&dow<=3))return true;
         if(endoscopyRule&&code==="E"&&dow!==4)return true;
         if(ftRule&&code==="FT"&&(dow===0||dow===6))return true;
         if(restRule&&hadNight(u.id,previousDay(date)))return true;
@@ -204,6 +206,7 @@ export default function GenerateShifts(){
         if(mo1Rule&&mo1User&&!weekend&&!holiday){if(!hardBlocked(mo1User,date,"Mo1"))add(mo1User,date,"Mo1","Vincolo automatico: Mo1");else conflict(date,`Mo1 non assegnabile a ${mo1User.username}`);}
         if(endoscopyRule&&dow===4&&!holiday){const e=choose(date,"E");if(e)add(e,date,"E","Vincolo automatico: Endoscopia");else conflict(date,"Endoscopia E non assegnabile");}
         const required:string[]=weekend?[]:["M1","M2","M3"];
+        if(mo2Rule&&!holiday&&dow>=1&&dow<=3)required.push("Mo2");
         if(ftRule&&!weekend&&dow>=1&&dow<=5)required.push("FT");
         // G e N sono richiesti una sola volta al giorno. Le regole weekend
         // definiscono la copertura del weekend, non aggiungono una seconda G/N.
@@ -225,7 +228,7 @@ export default function GenerateShifts(){
         }
         for(const code of required){
           if(allAssignments().some(a=>a.shift_date===date&&a.short_name===code))continue;
-          if(code.startsWith("M")&&!enabled("weekday_morning_rooms"))continue;
+          if(["M1","M2","M3"].includes(code)&&!enabled("weekday_morning_rooms"))continue;
           const u=choose(date,code);
           if(u)add(u,date,code);else conflict(date,`Nessun candidato valido per ${code}`);
         }
@@ -250,7 +253,7 @@ export default function GenerateShifts(){
           const avg=counts.reduce((a,b)=>a+b,0)/counts.length;
           objective+=counts.reduce((sum,n)=>sum+Math.pow(n-avg,2),0)*250;
         }
-        for(const code of ["G","N","M1","M2","M3","FT","E"]){
+        for(const code of ["G","N","M1","M2","M3","Mo2","FT","E"]){
           const eligible=users.filter(u=>u.service==="anestesia"&&( !["G","N"].includes(code)|| (u.employment_role!=="part_time"&&u.id!==rissottiUser?.id) ));
           if(eligible.length<2)continue;
           const counts=eligible.map(u=>allAssignments().filter(a=>a.user_id===u.id&&a.short_name===code).length);
