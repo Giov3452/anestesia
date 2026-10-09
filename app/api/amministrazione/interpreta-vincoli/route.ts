@@ -84,6 +84,26 @@ export async function POST(request: Request) {
         excludeHolidays:false,username:null,employmentRoles:[],service:null,allowedWeekdays:null,
         maxPerUserDay:null,afterShiftCodes:[],rationale:"",unsupportedReason:"Output AI assente o non valido."
       };
+      // Preserve the established semantics of legacy constraints when the AI
+      // emits a less expressive classification. These mappings are explicit and
+      // deterministic; they do not alter calendar assignments.
+      const constraintName = String(constraint.name || "").trim().toLocaleLowerCase("it-IT");
+      const constraintCode = String(constraint.code || "").trim().toLocaleLowerCase("it-IT");
+      if ((constraintCode === "rest_after_night" || constraintName === "smonto notte") && safeRule.kind === "rest_after_shift") {
+        safeRule.afterShiftCodes = safeRule.afterShiftCodes.length ? safeRule.afterShiftCodes : (safeRule.shiftCodes.length ? [...safeRule.shiftCodes] : ["N"]);
+        safeRule.status = "supported";
+        safeRule.unsupportedReason = null;
+      }
+      if (constraintCode === "weekday_morning_rooms" || constraintName === "tre sale mattutine") {
+        Object.assign(safeRule, {status:"supported",kind:"require_shift_daily",shiftCodes:["M1","M2","M3"],count:3,weekdays:[1,2,3,4,5],excludeHolidays:true,username:null,employmentRoles:[],allowedWeekdays:[1,2,3,4,5],unsupportedReason:null,rationale:constraint.description});
+      }
+      if (constraintName === "mo1") {
+        Object.assign(safeRule, {status:"supported",kind:"require_shift_for_user",shiftCodes:["Mo1"],count:1,weekdays:[1,2,3,4,5],excludeHolidays:true,username:"mariangela_rissotti",employmentRoles:[],allowedWeekdays:null,unsupportedReason:null,rationale:constraint.description});
+      }
+      if (constraintName === "endoscopia") {
+        // The existing generator historically schedules one E on Thursdays.
+        Object.assign(safeRule, {status:"supported",kind:"require_shift_daily",shiftCodes:["E"],count:1,weekdays:[4],excludeHolidays:true,username:null,employmentRoles:[],allowedWeekdays:[4],maxPerUserDay:null,unsupportedReason:null,rationale:constraint.description});
+      }
       const unsupported =
         (safeRule.kind === "require_shift_daily" && (!safeRule.shiftCodes.length || ((safeRule.count ?? 1) > 1 && safeRule.shiftCodes.length < (safeRule.count ?? 1)) || safeRule.username !== null || safeRule.employmentRoles.length > 0)) ||
         (safeRule.kind === "require_shift_for_user" && (!safeRule.username || !safeRule.shiftCodes.length)) ||
