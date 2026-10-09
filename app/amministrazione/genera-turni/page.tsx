@@ -204,9 +204,10 @@ export default function GenerateShifts(){
       const weekendShiftCount=(uid:string)=>allAssignments().filter(a=>{if(a.user_id!==uid||a.short_name==="SN")return false;const dow=new Date(a.shift_date+"T00:00:00").getDay();return dow===0||dow===6;}).length;
       const roleRate=(u:User)=>u.employment_role==="calabria"?6.4:u.employment_role==="part_time"?8:7.6;
       const baseTargetHours=(u:User)=>{let h=0;for(let d=1;d<=daysInMonth;d++){const date=iso(y,m,d),dow=new Date(date+"T00:00:00").getDay();if(dow===0||dow===6||italianNationalHolidayName(date))continue;if(u.employment_role==="part_time"&&partTimeDaysLimited&&!([1,2,3].includes(dow)))continue;h+=roleRate(u);}return h;};
-      const incentiveConstraintEnabled=rules.some(r=>r.code==="incentive_availability"&&r.enabled);
+      const incentiveRule=rules.find(r=>r.enabled&&r.config?.parsed_rule?.status==="supported"&&r.config?.parsed_rule?.kind==="incentive_surplus");
+      const incentiveConstraintEnabled=Boolean(incentiveRule);
       const incentiveByUser=new Map<string,number>((incentiveConstraintEnabled?(incentives||[]) as IncentiveRequest[]:[]).map(r=>[r.user_id,Number(r.hours)||0] as const));
-      const incentiveSurplusRequired=(uid:string)=>incentiveByUser.has(uid)?incentiveByUser.get(uid)!+6:0;
+      const incentiveSurplusRequired=(uid:string)=>incentiveByUser.has(uid)?incentiveByUser.get(uid)!+Math.max(0,Number(incentiveRule?.config?.parsed_rule?.count)||0):0;
       // L'obiettivo individuale include le ore richieste per incentivo più almeno 6 ore aggiuntive.
       const targetHours=(u:User)=>baseTargetHours(u)+incentiveSurplusRequired(u.id);
       const canoviUser=users.find(u=>/mariangela_canovi/i.test(u.username));
@@ -316,7 +317,8 @@ export default function GenerateShifts(){
         for(const incentive of incentiveList){
           const recipient=users.find(u=>u.id===incentive.user_id);
           if(!recipient||recipient.service!=="anestesia")continue;
-          const needed=Math.max(0,(Number(incentive.hours)||0)+6-(currentHours(recipient.id)-baseTargetHours(recipient)));
+          const minimumSurplus=Math.max(0,Number(incentiveRule?.config?.parsed_rule?.count)||0);
+          const needed=Math.max(0,(Number(incentive.hours)||0)+minimumSurplus-(currentHours(recipient.id)-baseTargetHours(recipient)));
           let remaining=needed;
           while(remaining>0.001){
             const candidates=added.map((a,index)=>({a,index,donor:users.find(u=>u.id===a.user_id),hours:duration(a.short_name)}))
@@ -330,7 +332,7 @@ export default function GenerateShifts(){
             added[chosen.index]={...chosen.a,user_id:recipient.id,notes:`${chosen.a.notes?chosen.a.notes+" · ":""}Redistribuito per incentivo da ${donor.username}`};
             remaining-=chosen.hours;
           }
-          if(remaining>0.001)conflict(endDate,`${recipient.username}: incentivo ${incentive.hours} h; surplus minimo richiesto ${Number(incentive.hours)+6} h oltre il monte ore teorico, mancano ${remaining.toFixed(1)} h senza portare altri utenti sotto il loro bilancio minimo`);
+          if(remaining>0.001)conflict(endDate,`${recipient.username}: incentivo ${incentive.hours} h; surplus minimo richiesto ${Number(incentive.hours)+minimumSurplus} h oltre il monte ore teorico, mancano ${remaining.toFixed(1)} h senza portare altri utenti sotto il loro bilancio minimo`);
         }
         let objective=0;
         for(const u of users.filter(x=>x.service==="anestesia")){
