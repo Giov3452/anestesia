@@ -333,6 +333,29 @@ export default function GenerateShifts(){
             remaining-=chosen.hours;
           }
           if(remaining>0.001)conflict(endDate,`${recipient.username}: incentivo ${incentive.hours} h; surplus minimo richiesto ${Number(incentive.hours)+minimumSurplus} h oltre il monte ore teorico, mancano ${remaining.toFixed(1)} h senza portare altri utenti sotto il loro bilancio minimo`);
+          // If the initial coverage allocation already pushed the incentive recipient above
+          // the minimum target, rebalance excess draft shifts away instead of leaving an
+          // unnecessarily large surplus. Never drop the recipient below target, and only
+          // move a shift when another eligible colleague can take it without conflicts.
+          const recipientTarget = baseTargetHours(recipient) + (Number(incentive.hours)||0) + minimumSurplus;
+          let excess = currentHours(recipient.id) - recipientTarget;
+          while(excess > 0.001){
+            const candidates = added.map((a,index)=>({a,index,hours:duration(a.short_name)}))
+              .filter(x=>x.a.user_id===recipient.id&&x.a.source==="automatic"&&x.a.status==="draft"&&x.hours>0
+                && !["SN","RC","RG","RN","RP","R","Rp"].includes(x.a.short_name)
+                && x.hours<=excess+0.001
+                && !compiledRules.some(rule=>rule.kind==="require_shift_for_user"&&rule.username
+                  && usernameMatches(rule.username,recipient.username)&&rule.shiftCodes.includes(x.a.short_name)
+                  && ruleAppliesOnDate(rule,x.a.shift_date,!!italianNationalHolidayName(x.a.shift_date))))
+              .flatMap(x=>users.filter(donor=>donor.id!==recipient.id&&!hardBlocked(donor,x.a.shift_date,x.a.short_name))
+                .map(donor=>({...x,donor,remainingExcess:excess-x.hours})))
+              .filter(x=>currentHours(recipient.id)-x.hours>=recipientTarget-0.001)
+              .sort((a,b)=>a.remainingExcess-b.remainingExcess);
+            const chosen=candidates[0];
+            if(!chosen)break;
+            added[chosen.index]={...chosen.a,user_id:chosen.donor.id,notes:\`\${chosen.a.notes?chosen.a.notes+" · ":""}Redistribuito per contenere il surplus incentivo di \${recipient.username}\`};
+            excess=currentHours(recipient.id)-recipientTarget;
+          }
         }
         let objective=0;
         for(const u of users.filter(x=>x.service==="anestesia")){
