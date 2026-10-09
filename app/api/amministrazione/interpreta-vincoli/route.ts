@@ -85,14 +85,15 @@ export async function POST(request: Request) {
         maxPerUserDay:null,afterShiftCodes:[],rationale:"",unsupportedReason:"Output AI assente o non valido."
       };
       const unsupported =
-        (safeRule.kind === "require_shift_daily" && (!safeRule.shiftCodes.length || (safeRule.count ?? 1) > 1)) ||
+        (safeRule.kind === "require_shift_daily" && (!safeRule.shiftCodes.length || ((safeRule.count ?? 1) > 1 && safeRule.shiftCodes.length < (safeRule.count ?? 1)))) ||
         (safeRule.kind === "require_shift_for_user" && (!safeRule.username || !safeRule.shiftCodes.length)) ||
         (safeRule.kind === "forbid_shift_for_user" && (!safeRule.username || !safeRule.shiftCodes.length)) ||
         (safeRule.kind === "forbid_shift_for_role" && (!safeRule.employmentRoles.length || !safeRule.shiftCodes.length)) ||
         (safeRule.kind === "allowed_weekdays_for_role" && (!safeRule.employmentRoles.length || !safeRule.allowedWeekdays?.length)) ||
         (safeRule.kind === "rest_after_shift" && !safeRule.afterShiftCodes.length) ||
         (safeRule.kind === "max_shifts_per_user_day" && (safeRule.maxPerUserDay ?? 1) !== 1) ||
-        safeRule.kind === "unknown";
+        safeRule.kind === "unknown" ||
+        (safeRule.kind === "fair_distribution" && !/weekend|fine settimana|sabato|domenica/i.test(String((active as any[]).find((r:any)=>r.id===constraint.id)?.name||"")+" "+String((active as any[]).find((r:any)=>r.id===constraint.id)?.description||"")));
       if (unsupported) {
         safeRule.status = "needs_review";
         safeRule.unsupportedReason = safeRule.unsupportedReason || "La regola richiede parametri mancanti o una funzione non ancora implementata nel motore.";
