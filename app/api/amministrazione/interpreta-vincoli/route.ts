@@ -104,6 +104,11 @@ export async function POST(request: Request) {
         // The existing generator historically schedules one E on Thursdays.
         Object.assign(safeRule, {status:"supported",kind:"require_shift_daily",shiftCodes:["E"],count:1,weekdays:[4],excludeHolidays:true,username:null,employmentRoles:[],allowedWeekdays:[4],maxPerUserDay:null,unsupportedReason:null,rationale:constraint.description});
       }
+      if (constraintCode === "incentive_availability") {
+        // Implemented directly in the scheduler: incentive requests require hours + 6 h surplus,
+        // with redistribution restricted to draft automatic shifts and non-negative donor balances.
+        Object.assign(safeRule, {status:"supported",kind:"fair_distribution",shiftCodes:[],count:null,weekdays:null,excludeHolidays:false,username:null,employmentRoles:[],service:null,allowedWeekdays:null,maxPerUserDay:null,afterShiftCodes:[],unsupportedReason:null,rationale:constraint.description});
+      }
       const unsupported =
         (safeRule.kind === "require_shift_daily" && (!safeRule.shiftCodes.length || ((safeRule.count ?? 1) > 1 && safeRule.shiftCodes.length < (safeRule.count ?? 1)) || safeRule.username !== null || safeRule.employmentRoles.length > 0)) ||
         (safeRule.kind === "require_shift_for_user" && (!safeRule.username || !safeRule.shiftCodes.length)) ||
@@ -113,7 +118,7 @@ export async function POST(request: Request) {
         (safeRule.kind === "rest_after_shift" && !safeRule.afterShiftCodes.length) ||
         (safeRule.kind === "max_shifts_per_user_day" && (safeRule.maxPerUserDay ?? 1) !== 1) ||
         safeRule.kind === "unknown" ||
-        (safeRule.kind === "fair_distribution" && !/weekend|fine settimana|sabato|domenica/i.test(String((active as any[]).find((r:any)=>r.id===constraint.id)?.name||"")+" "+String((active as any[]).find((r:any)=>r.id===constraint.id)?.description||"")));
+        (safeRule.kind === "fair_distribution" && constraintCode !== "incentive_availability" && !/weekend|fine settimana|sabato|domenica/i.test(String((active as any[]).find((r:any)=>r.id===constraint.id)?.name||"")+" "+String((active as any[]).find((r:any)=>r.id===constraint.id)?.description||"")));
       if (unsupported) {
         safeRule.status = "needs_review";
         safeRule.unsupportedReason = safeRule.unsupportedReason || "La regola richiede parametri mancanti o una funzione non ancora implementata nel motore.";
