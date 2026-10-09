@@ -33,6 +33,7 @@ export default function Requests(){
   const [incentives,setIncentives]=useState<IncentiveRow[]>([]);
   const [incentiveMonth,setIncentiveMonth]=useState(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`});
   const [incentiveHours,setIncentiveHours]=useState<number|null>(null);
+  const [incentiveNotes,setIncentiveNotes]=useState("");
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
   const [message,setMessage]=useState("");
@@ -63,7 +64,7 @@ export default function Requests(){
 
   function resetModal(){
     setOpen(null);setEditing(null);setDate("");setSelected(["non_lavorare"]);setNotes("");setDates([]);
-    setVacStart("");setVacEnd("");setVacNotes("");setIncentiveHours(null);setError("");
+    setVacStart("");setVacEnd("");setVacNotes("");setIncentiveHours(null);setIncentiveNotes("");setError("");
   }
 
   function startNew(kind:"desiderata"|"ferie"){
@@ -72,10 +73,10 @@ export default function Requests(){
     else{setVacStart("");setVacEnd("");setVacNotes("")}
   }
 
-  function startIncentive(){setMessage("");setError("");setEditing(null);setOpen("incentivo");setIncentiveHours(null);const d=new Date();setIncentiveMonth(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`)}
+  function startIncentive(){setMessage("");setError("");setEditing(null);setOpen("incentivo");setIncentiveHours(null);setIncentiveNotes("");const d=new Date();setIncentiveMonth(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`)}
 
   function startEdit(row:HistoryRow){
-    if(row.kind==="incentivo"){const item=incentives.find(x=>x.id===row.id);if(!item)return;setMessage("");setError("");setEditing(row);setOpen("incentivo");setIncentiveMonth(item.request_month);setIncentiveHours(item.hours);return}
+    if(row.kind==="incentivo"){const item=incentives.find(x=>x.id===row.id);if(!item)return;setMessage("");setError("");setEditing(row);setOpen("incentivo");setIncentiveMonth(item.request_month);setIncentiveHours(item.hours);setIncentiveNotes(item.notes||"");return}
     setMessage("");setError("");setEditing(row);setOpen(row.kind);
     if(row.kind==="desiderata"){
       const item=requests.find(x=>x.id===row.id);if(!item)return;
@@ -128,7 +129,7 @@ export default function Requests(){
     await load();setSaving(false);resetModal();setMessage(editing?"Periodo ferie modificato correttamente.":"Periodo ferie inviato correttamente.");
   }
 
-  async function saveIncentive(){setError("");setMessage("");if(!incentiveHours){setError("Seleziona 6, 12 oppure 24 ore.");return}setSaving(true);const s=createClient();const {data:{user}}=await s.auth.getUser();if(!user){setError("Sessione scaduta.");setSaving(false);return}const payload={user_id:user.id,request_month:incentiveMonth,hours:incentiveHours,updated_at:new Date().toISOString()};const result=editing?.kind==="incentivo"?await s.from("incentive_availability_requests").update(payload).eq("id",editing.id).eq("user_id",user.id):await s.from("incentive_availability_requests").upsert(payload,{onConflict:"user_id,request_month"});if(result.error){setError(result.error.message);setSaving(false);return}await load();setSaving(false);resetModal();setMessage("Disponibilità incentivo salvata correttamente.")}
+  async function saveIncentive(){setError("");setMessage("");if(!incentiveHours){setError("Seleziona 6, 12 oppure 24 ore.");return}setSaving(true);const s=createClient();const {data:{user}}=await s.auth.getUser();if(!user){setError("Sessione scaduta.");setSaving(false);return}const payload={user_id:user.id,request_month:incentiveMonth,hours:incentiveHours,notes:incentiveNotes||null,updated_at:new Date().toISOString()};const result=editing?.kind==="incentivo"?await s.from("incentive_availability_requests").update(payload).eq("id",editing.id).eq("user_id",user.id):await s.from("incentive_availability_requests").upsert(payload,{onConflict:"user_id,request_month"});if(result.error){setError(result.error.message);setSaving(false);return}await load();setSaving(false);resetModal();setMessage("Disponibilità incentivo salvata correttamente.")}
 
   async function remove(row:HistoryRow){
     if(!window.confirm("Sei sicuro di voler cancellare questa richiesta?"))return;
@@ -187,6 +188,7 @@ export default function Requests(){
           <div className="field"><label>Mese di riferimento</label><select value={incentiveMonth} onChange={e=>setIncentiveMonth(e.target.value)}>{Array.from({length:12-new Date().getMonth()},(_,i)=>{const d=new Date(new Date().getFullYear(),new Date().getMonth()+i,1);return <option key={d.toISOString()} value={`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`}>{d.toLocaleDateString("it-IT",{month:"long",year:"numeric"})}</option>})}</select></div>
           <p className="incentive-question">Disponibilità ore per incentivo per il mese di <strong>{new Date(incentiveMonth+"T12:00:00").toLocaleDateString("it-IT",{month:"long",year:"numeric"})}</strong>:</p>
           <div className="incentive-options">{[6,12,24].map(hours=><button type="button" key={hours} className={"type-option incentive-option "+(incentiveHours===hours?"selected":"")} aria-pressed={incentiveHours===hours} onClick={()=>setIncentiveHours(hours)}>{hours} h</button>)}</div>
+          <div className="field"><label>Note (facoltative)</label><textarea rows={2} value={incentiveNotes} onChange={e=>setIncentiveNotes(e.target.value)} placeholder="Eventuali indicazioni..."/></div>
           {error&&<div className="error">{error}</div>}
           <button className="btn btn-primary" disabled={saving} onClick={saveIncentive}>{saving?"Salvataggio...":editing?"Salva modifiche":"Invia disponibilità"}</button>
         </div>}
