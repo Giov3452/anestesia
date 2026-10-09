@@ -11,7 +11,7 @@ const schema = {
   properties: {
     version: {type: "integer", enum: [1]},
     status: {type: "string", enum: ["supported", "needs_review"]},
-    kind: {type: "string", enum: ["require_shift_daily","require_shift_for_user","forbid_shift_for_user","forbid_shift_for_role","allowed_weekdays_for_role","max_shifts_per_user_day","rest_after_shift","fair_distribution","hide_shift","unknown"]},
+    kind: {type: "string", enum: ["require_shift_daily","require_shift_for_user","forbid_shift_for_user","forbid_shift_for_role","allowed_weekdays_for_role","max_shifts_per_user_day","rest_after_shift","fair_distribution","incentive_surplus","hide_shift","unknown"]},
     shiftCodes: {type: "array", items: {type: "string"}},
     count: {type: ["integer","null"]},
     weekdays: {type: ["array","null"], items: {type: "integer", minimum: 0, maximum: 6}},
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     if (!active.length) return NextResponse.json({processed:0, supported:0, needsReview:0, results:[]});
 
     const model = process.env.OPENAI_RULE_MODEL || "gpt-4.1-mini";
-    const prompt = `Convert each Italian staffing constraint into exactly one conservative structured rule for a deterministic shift scheduler. Never invent details. If a constraint combines multiple independent rules or its meaning is ambiguous, use status needs_review and kind unknown. Do not treat a rule as supported unless the operation and every relevant parameter are representable. Weekdays use JavaScript numbers: Sunday 0, Monday 1, Tuesday 2, Wednesday 3, Thursday 4, Friday 5, Saturday 6. Shift short codes must be copied from the text only when explicit; infer a code from a name like "notte" only when unambiguous. Usernames should be copied exactly when explicit. For "only", use a forbid/allowed-days rule as appropriate. Use require_shift_daily for coverage requirements. Use max_shifts_per_user_day for per-person daily caps. Use rest_after_shift for rest after a shift. Use fair_distribution for balancing. hide_shift is display-only and does not schedule. Current available employment roles: strutturato, calabria, part_time. Rules:\n${active.map((r:any)=>JSON.stringify({id:r.id,code:r.code,name:r.name,description:r.description})).join("\n")}`;
+    const prompt = `Convert each Italian staffing constraint into exactly one conservative structured rule for a deterministic shift scheduler. Never invent details. If a constraint combines multiple independent rules or its meaning is ambiguous, use status needs_review and kind unknown. Do not treat a rule as supported unless the operation and every relevant parameter are representable. Weekdays use JavaScript numbers: Sunday 0, Monday 1, Tuesday 2, Wednesday 3, Thursday 4, Friday 5, Saturday 6. Shift short codes must be copied from the text only when explicit; infer a code from a name like "notte" only when unambiguous. Usernames should be copied exactly when explicit. For "only", use a forbid/allowed-days rule as appropriate. Use require_shift_daily for coverage requirements. Use max_shifts_per_user_day for per-person daily caps. Use rest_after_shift for rest after a shift. Use fair_distribution for balancing. For constraints that say incentive requests require at least the requested hours plus an additional surplus, use incentive_surplus and set count to the minimum additional surplus hours (e.g. 6); the requested hours come from the monthly incentive request records at scheduling time. Only classify this as supported if the text clearly defines the rule. hide_shift is display-only and does not schedule. Current available employment roles: strutturato, calabria, part_time. Rules:\n${active.map((r:any)=>JSON.stringify({id:r.id,code:r.code,name:r.name,description:r.description})).join("\n")}`;
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method:"POST",
       headers:{Authorization:`Bearer ${apiKey}`,"Content-Type":"application/json"},
@@ -104,11 +104,6 @@ export async function POST(request: Request) {
         // The existing generator historically schedules one E on Thursdays.
         Object.assign(safeRule, {status:"supported",kind:"require_shift_daily",shiftCodes:["E"],count:1,weekdays:[4],excludeHolidays:true,username:null,employmentRoles:[],allowedWeekdays:[4],maxPerUserDay:null,unsupportedReason:null,rationale:constraint.description});
       }
-      if (constraintCode === "incentive_availability") {
-        // Implemented directly in the scheduler: incentive requests require hours + 6 h surplus,
-        // with redistribution restricted to draft automatic shifts and non-negative donor balances.
-        Object.assign(safeRule, {status:"supported",kind:"fair_distribution",shiftCodes:[],count:null,weekdays:null,excludeHolidays:false,username:null,employmentRoles:[],service:null,allowedWeekdays:null,maxPerUserDay:null,afterShiftCodes:[],unsupportedReason:null,rationale:constraint.description});
-      }
       const unsupported =
         (safeRule.kind === "require_shift_daily" && (!safeRule.shiftCodes.length || ((safeRule.count ?? 1) > 1 && safeRule.shiftCodes.length < (safeRule.count ?? 1)) || safeRule.username !== null || safeRule.employmentRoles.length > 0)) ||
         (safeRule.kind === "require_shift_for_user" && (!safeRule.username || !safeRule.shiftCodes.length)) ||
@@ -118,7 +113,8 @@ export async function POST(request: Request) {
         (safeRule.kind === "rest_after_shift" && !safeRule.afterShiftCodes.length) ||
         (safeRule.kind === "max_shifts_per_user_day" && (safeRule.maxPerUserDay ?? 1) !== 1) ||
         safeRule.kind === "unknown" ||
-        (safeRule.kind === "fair_distribution" && constraintCode !== "incentive_availability" && !/weekend|fine settimana|sabato|domenica/i.test(String((active as any[]).find((r:any)=>r.id===constraint.id)?.name||"")+" "+String((active as any[]).find((r:any)=>r.id===constraint.id)?.description||"")));
+        (safeRule.kind === "incentive_surplus" && (!Number.isFinite(safeRule.count) || (safeRule.count ?? 0) < 0)) ||
+        (safeRule.kind === "fair_distribution" && !/weekend|fine settimana|sabato|domenica/i.test(String((active as any[]).find((r:any)=>r.id===constraint.id)?.name||"")+" "+String((active as any[]).find((r:any)=>r.id===constraint.id)?.description||"")));
       if (unsupported) {
         safeRule.status = "needs_review";
         safeRule.unsupportedReason = safeRule.unsupportedReason || "La regola richiede parametri mancanti o una funzione non ancora implementata nel motore.";
