@@ -243,7 +243,7 @@ export default function GenerateShifts(){
             if(target&&code){
               const existingCode=allAssignments().find(a=>a.shift_date===date&&a.short_name===code);
               if(existingCode&&existingCode.user_id!==target.id){
-                conflict(date,`Vincolo ${rule.name||"per utente"}: ${code} è già assegnato a un dipendente diverso da ${target.username}`);
+                conflict(date,`Vincolo ${"per utente"}: ${code} è già assegnato a un dipendente diverso da ${target.username}`);
               }else if(!existingCode&&!hardBlocked(target,date,code)){
                 add(target,date,code,`Vincolo interpretato: ${rule.rationale}`);
               }else if(!existingCode){
