@@ -7,6 +7,7 @@ import UserMenu from "@/app/components/UserMenu";
 import {createClient} from "@/lib/supabase/client";
 import BackButton from "@/app/components/BackButton";
 import {italianNationalHolidayName} from "@/lib/calendar";
+import {getParsedRule,ruleAppliesOnDate,type ParsedGeneratorRule} from "@/lib/generator-rules";
 
 type User={id:string;username:string;role:string;employment_role:"strutturato"|"calabria"|"part_time";service:string};
 type Assignment={id:number;user_id:string;shift_date:string;short_name:string;shift_type:string|null;source:string;status:string;notes:string|null};
@@ -53,6 +54,8 @@ export default function GenerateShifts(){
   const [error,setError]=useState("");
   const [conflictDates,setConflictDates]=useState<string[]>([]);
   const [validated,setValidated]=useState(false);
+  const [interpretingRules,setInterpretingRules]=useState(false);
+  const [ruleInterpretation,setRuleInterpretation]=useState<{processed:number;supported:number;needsReview:number}|null>(null);
 
   const load=async()=>{
     const s=createClient(); const {data:{user}}=await s.auth.getUser();
@@ -75,6 +78,19 @@ export default function GenerateShifts(){
     if(prev){const {data:old}=await s.from("calendar_shifts").select("*").eq("shift_date",prev);if(old)setAssignments(a=>(as||[]).concat(old));}
   };
   useEffect(()=>{load()},[current]);
+
+  async function interpretRules(){
+    setInterpretingRules(true);setError("");setMessage("");setRuleInterpretation(null);
+    try{
+      const response=await fetch("/api/amministrazione/interpreta-vincoli",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||"Impossibile interpretare i vincoli.");
+      setRuleInterpretation({processed:result.processed||0,supported:result.supported||0,needsReview:result.needsReview||0});
+      setMessage("Interpretazione AI completata. Le regole strutturate sono state salvate senza modificare i turni.");
+      await load();
+    }catch(e){setError(e instanceof Error?e.message:"Errore interpretazione AI.");}
+    finally{setInterpretingRules(false);}
+  }
 
   const cells=useMemo(()=>buildCalendar(current.getFullYear(),current.getMonth()),[current]);
   const hasVacation=(date:string)=>vacations.some(v=>v.start_date<=date&&v.end_date>=date);
@@ -152,6 +168,8 @@ export default function GenerateShifts(){
       const vacation=(uid:string,date:string)=>((vac||[]) as any[]).some(v=>v.user_id===uid&&v.start_date<=date&&v.end_date>=date);
       const reqFor=(uid:string,date:string)=>((req||[]) as any[]).find(r=>r.user_id===uid&&r.request_date===date);
       const enabled=(code:string)=>rules.some(r=>r.code===code&&r.enabled);
+      const compiledRules:ParsedGeneratorRule[]=rules.filter(r=>r.enabled).map(r=>getParsedRule(r)).filter((r):r is ParsedGeneratorRule=>!!r);
+      const usernameMatches=(ruleName:string|null,username:string)=>!!ruleName&&username.toLowerCase().replaceAll("_"," ").trim()===ruleName.toLowerCase().replaceAll("_"," ").trim();
       const textRule=(needle:string)=>rules.find(r=>r.enabled&&(`${r.name} ${r.description}`).toLowerCase().includes(needle.toLowerCase()));
       const restRule=rules.find(r=>r.code==="rest_after_night"&&r.enabled);
       const partTimeRule=textRule("part time");
@@ -190,6 +208,16 @@ export default function GenerateShifts(){
         if(endoscopyRule&&code==="E"&&dow!==4)return true;
         if(ftRule&&code==="FT"&&(dow===0||dow===6))return true;
         if(restRule&&hadNight(u.id,previousDay(date)))return true;
+        for(const rule of compiledRules){
+          if(!ruleAppliesOnDate(rule,date,holiday))continue;
+          const roleMatch=rule.employmentRoles.length===0||rule.employmentRoles.includes(u.employment_role);
+          const userMatch=!rule.username||usernameMatches(rule.username,u.username);
+          const codeMatch=rule.shiftCodes.length===0||rule.shiftCodes.includes(code);
+          if(rule.kind==="forbid_shift_for_user"&&userMatch&&codeMatch)return true;
+          if(rule.kind==="forbid_shift_for_role"&&roleMatch&&codeMatch)return true;
+          if(rule.kind==="allowed_weekdays_for_role"&&roleMatch&&rule.allowedWeekdays&&!rule.allowedWeekdays.includes(dow))return true;
+          if(rule.kind==="rest_after_shift"&&rule.afterShiftCodes.some(prevCode=>allAssignments().some(a=>a.user_id===u.id&&a.shift_date===previousDay(date)&&a.short_name===prevCode)))return true;
+        }
         if(hasAnyWork(u.id,date))return true;
         if((weekend||holiday)&&["M1","M2","M3","Mo1","Mo2","MRia"].includes(code))return true;
         return false;
@@ -204,8 +232,23 @@ export default function GenerateShifts(){
         for(let day=1;day<=daysInMonth;day++){
         const date=iso(y,m,day),dow=new Date(date+"T00:00:00").getDay(),weekend=dow===0||dow===6,holiday=!!italianNationalHolidayName(date);
         if(mo1Rule&&mo1User&&!weekend&&!holiday){if(!hardBlocked(mo1User,date,"Mo1"))add(mo1User,date,"Mo1","Vincolo automatico: Mo1");else conflict(date,`Mo1 non assegnabile a ${mo1User.username}`);}
+        for(const rule of compiledRules){
+          if(!ruleAppliesOnDate(rule,date,holiday))continue;
+          if(rule.kind==="require_shift_for_user"&&rule.username){
+            const target=users.find(u=>usernameMatches(rule.username,u.username));
+            const code=rule.shiftCodes[0];
+            if(target&&code&&!allAssignments().some(a=>a.shift_date===date&&a.short_name===code)){
+              if(!hardBlocked(target,date,code))add(target,date,code,`Vincolo interpretato: ${rule.rationale}`);
+              else conflict(date,`${rule.name||"Vincolo"}: assegnazione di ${code} non possibile per ${target.username}`);
+            }
+          }
+        }
         if(endoscopyRule&&dow===4&&!holiday){const e=choose(date,"E");if(e)add(e,date,"E","Vincolo automatico: Endoscopia");else conflict(date,"Endoscopia E non assegnabile");}
         const required:string[]=weekend?[]:["M1","M2","M3"];
+        for(const rule of compiledRules){
+          if(rule.kind!=="require_shift_daily"||!ruleAppliesOnDate(rule,date,holiday))continue;
+          for(const code of rule.shiftCodes){if(!required.includes(code)&&!allAssignments().some(a=>a.shift_date===date&&a.short_name===code))required.push(code);}
+        }
         if(mo2Rule&&!holiday&&dow>=1&&dow<=3)required.push("Mo2");
         if(ftRule&&!weekend&&dow>=1&&dow<=5)required.push("FT");
         // G e N sono richiesti una sola volta al giorno. Le regole weekend
@@ -280,7 +323,7 @@ export default function GenerateShifts(){
   if(!authorized)return <main className="auth"><section className="auth-card"><h1 className="title">Accesso negato</h1><p className="sub">Questa sezione è riservata agli amministratori.</p><Link className="link" href="/dashboard">Torna alla dashboard</Link></section></main>;
 
   return <div className="shell"><header className="appbar"><Link className="brand" href="/dashboard"><span className="brand-mark"><CalendarDays size={19}/></span>Turni Ospedalieri</Link><UserMenu/></header>
-  <main className="main"><BackButton/><div className="generation-title-row"><div><p className="eyebrow">Programmazione</p><h1 className="title">Genera nuovi turni</h1><p className="sub">Calendario mensile operativo. Le celle sono modificabili manualmente.</p></div><div className="generator-links"><button className="generator-auto-link" onClick={generate} disabled={busy}>Generatore automatico</button><button className="generator-clear-link" onClick={clearCurrentMonth} disabled={busy}>Cancella tutto</button><Link href="/amministrazione/modifica-generatore">Modifica Generatore</Link><Link href="/amministrazione/contatori">Contatori</Link><Link href="/amministrazione/storico" target="_blank" rel="noopener noreferrer">Storico</Link></div></div>
+  <main className="main"><BackButton/><div className="generation-title-row"><div><p className="eyebrow">Programmazione</p><h1 className="title">Genera nuovi turni</h1><p className="sub">Calendario mensile operativo. Le celle sono modificabili manualmente.</p></div><div className="generator-links"><button className="generator-auto-link" onClick={generate} disabled={busy||interpretingRules}>Generatore automatico</button><button className="generator-clear-link" onClick={interpretRules} disabled={busy||interpretingRules}>{interpretingRules?"Interpreto…":"Interpreta vincoli AI"}</button><button className="generator-clear-link" onClick={clearCurrentMonth} disabled={busy}>Cancella tutto</button><Link href="/amministrazione/modifica-generatore">Modifica Generatore</Link><Link href="/amministrazione/contatori">Contatori</Link><Link href="/amministrazione/storico" target="_blank" rel="noopener noreferrer">Storico</Link></div></div>
   {message&&<div className="success">{message}</div>}{error&&<div className="error">{error}</div>}
   <section className="calendar-card"><div className="calendar-head"><button className="icon-btn" onClick={()=>setCurrent(new Date(current.getFullYear(),current.getMonth()-1,1))}><ChevronLeft size={20}/></button><div style={{textAlign:"center"}}><p className="eyebrow" style={{margin:0}}>{current.getFullYear()}</p><h2>{monthNames[current.getMonth()]}</h2></div><button className="icon-btn" onClick={()=>setCurrent(new Date(current.getFullYear(),current.getMonth()+1,1))}><ChevronRight size={20}/></button></div>
   <div className="calendar admin-month-grid">{weekDays.map(d=><div className="dow" key={d}>{d}</div>)}{cells.map((day,i)=>{if(!day)return <div className="day empty" key={i}/>;const date=iso(current.getFullYear(),current.getMonth(),day),holiday=italianNationalHolidayName(date),weekend=isWeekend(date),list=assignments.filter(a=>a.shift_date===date);const persistedConflict=list.some(a=>{const v=vacations.some(x=>x.user_id===a.user_id&&x.start_date<=date&&x.end_date>=date);const r=requests.find(x=>x.user_id===a.user_id&&x.request_date===date);return v||requestBlocksCode(r,a.short_name)});const critical=conflictDates.includes(date)||persistedConflict;return <div className={`day generation-day ${weekend?"weekend-day":""} ${holiday?"holiday-day":""} ${hasVacation(date)?"has-vacation":""} ${hasDesiderata(date)?"has-desiderata":""} ${critical?"generation-conflict":""}`} key={i} onClick={()=>openDay(date)}><div className="date-row"><span className="date">{day}</span>{hasVacation(date)&&<button className="request-dot vacation-dot" aria-label={vacationCount(date)+` ferie il ${fmtDate(date)}`} title={vacationCount(date)+` ferie il ${fmtDate(date)}`} onClick={e=>{e.stopPropagation();setRequestKind("vacation");setRequestDate(date)}}/>}{hasDesiderata(date)&&<button className="request-dot desiderata-dot" aria-label={requestCount(date)+` desiderata il ${fmtDate(date)}`} title={requestCount(date)+` desiderata il ${fmtDate(date)}`} onClick={e=>{e.stopPropagation();setRequestKind("desiderata");setRequestDate(date)}}/>}</div>{holiday&&<div className="holiday-label">{holiday}</div>}<div className="cell-shifts">{list.filter(a=>!(a.short_name==="SN"&&rules.some(r=>r.enabled&&r.name.toLowerCase()==="sn"&&r.description.toLowerCase().includes("non deve essere visualizzato")))).map(a=><div key={a.id} className={`calendar-shift-chip ${a.source==="automatic"?"draft-shift":""}`}><strong>{a.short_name}</strong> <span>{users.find(u=>u.id===a.user_id)?.username||"—"}</span></div>)}</div><div className="cell-edit-hint">modifica</div></div>})}</div></section><div style={{display:"flex",justifyContent:"flex-end",gap:10,marginTop:14}}>{validated&&<button className="btn btn-secondary" onClick={cancelValidation} disabled={busy}>Annulla convalida</button>}<button className="btn btn-primary" onClick={validateMonth} disabled={busy||validated}>{validated?"Turni convalidati":"Convalida turni"}</button></div>
