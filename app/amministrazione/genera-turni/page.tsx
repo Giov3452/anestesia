@@ -240,9 +240,15 @@ export default function GenerateShifts(){
           if(rule.kind==="require_shift_for_user"&&rule.username){
             const target=users.find(u=>usernameMatches(rule.username,u.username));
             const code=rule.shiftCodes[0];
-            if(target&&code&&!allAssignments().some(a=>a.shift_date===date&&a.short_name===code)){
-              if(!hardBlocked(target,date,code))add(target,date,code,`Vincolo interpretato: ${rule.rationale}`);
-              else conflict(date,`Vincolo: assegnazione di ${code} non possibile per ${target.username}`);
+            if(target&&code){
+              const existingCode=allAssignments().find(a=>a.shift_date===date&&a.short_name===code);
+              if(existingCode&&existingCode.user_id!==target.id){
+                conflict(date,`Vincolo ${rule.name||"per utente"}: ${code} è già assegnato a un dipendente diverso da ${target.username}`);
+              }else if(!existingCode&&!hardBlocked(target,date,code)){
+                add(target,date,code,`Vincolo interpretato: ${rule.rationale}`);
+              }else if(!existingCode){
+                conflict(date,`Vincolo: assegnazione di ${code} non possibile per ${target.username}`);
+              }
             }
           }
         }
