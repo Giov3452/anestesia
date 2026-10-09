@@ -85,7 +85,7 @@ export async function POST(request: Request) {
         maxPerUserDay:null,afterShiftCodes:[],rationale:"",unsupportedReason:"Output AI assente o non valido."
       };
       const unsupported =
-        (safeRule.kind === "require_shift_daily" && (!safeRule.shiftCodes.length || ((safeRule.count ?? 1) > 1 && safeRule.shiftCodes.length < (safeRule.count ?? 1)))) ||
+        (safeRule.kind === "require_shift_daily" && (!safeRule.shiftCodes.length || ((safeRule.count ?? 1) > 1 && safeRule.shiftCodes.length < (safeRule.count ?? 1)) || safeRule.username !== null || safeRule.employmentRoles.length > 0)) ||
         (safeRule.kind === "require_shift_for_user" && (!safeRule.username || !safeRule.shiftCodes.length)) ||
         (safeRule.kind === "forbid_shift_for_user" && (!safeRule.username || !safeRule.shiftCodes.length)) ||
         (safeRule.kind === "forbid_shift_for_role" && (!safeRule.employmentRoles.length || !safeRule.shiftCodes.length)) ||
