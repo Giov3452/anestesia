@@ -54,7 +54,7 @@ export default function GeneralShifts(){
      s.from("profiles").select("id,username")
     ]);
     if(rowsError||profilesError){setError(rowsError?.message||profilesError?.message||"Errore nel caricamento.");setLoading(false);return}
-    setShifts(rows||[]);
+    setShifts((rows||[]).filter((x:any)=>x.short_name!=="SN"));
     setProfiles(Object.fromEntries((ps||[]).map((p:any)=>[p.id,p.username])));
    }else setShifts([]);
    setLoading(false);
