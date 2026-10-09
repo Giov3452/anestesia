@@ -204,7 +204,8 @@ export default function GenerateShifts(){
       const weekendShiftCount=(uid:string)=>allAssignments().filter(a=>{if(a.user_id!==uid||a.short_name==="SN")return false;const dow=new Date(a.shift_date+"T00:00:00").getDay();return dow===0||dow===6;}).length;
       const roleRate=(u:User)=>u.employment_role==="calabria"?6.4:u.employment_role==="part_time"?8:7.6;
       const baseTargetHours=(u:User)=>{let h=0;for(let d=1;d<=daysInMonth;d++){const date=iso(y,m,d),dow=new Date(date+"T00:00:00").getDay();if(dow===0||dow===6||italianNationalHolidayName(date))continue;if(u.employment_role==="part_time"&&partTimeDaysLimited&&!([1,2,3].includes(dow)))continue;h+=roleRate(u);}return h;};
-      const incentiveByUser=new Map<string,number>(((incentives||[]) as IncentiveRequest[]).map(r=>[r.user_id,Number(r.hours)||0]));
+      const incentiveConstraintEnabled=rules.some(r=>r.code==="incentive_availability"&&r.enabled);
+      const incentiveByUser=new Map<string,number>((incentiveConstraintEnabled?(incentives||[]) as IncentiveRequest[]:[]).map(r=>[r.user_id,Number(r.hours)||0]));
       const incentiveSurplusRequired=(uid:string)=>incentiveByUser.has(uid)?incentiveByUser.get(uid)!+6:0;
       // L'obiettivo individuale include le ore richieste per incentivo più almeno 6 ore aggiuntive.
       const targetHours=(u:User)=>baseTargetHours(u)+incentiveSurplusRequired(u.id);
@@ -311,7 +312,7 @@ export default function GenerateShifts(){
         // Vincolo incentivo: raggiungere almeno ore richieste + 6 h di surplus sul monte ore teorico.
         // Si redistribuiscono solo turni generati in bozza; il donatore resta almeno al monte ore teorico
         // e rispetta l'eventuale propria quota incentivo.
-        const incentiveList=(incentives||[]) as IncentiveRequest[];
+        const incentiveList=incentiveConstraintEnabled?(incentives||[]) as IncentiveRequest[]:[];
         for(const incentive of incentiveList){
           const recipient=users.find(u=>u.id===incentive.user_id);
           if(!recipient||recipient.service!=="anestesia")continue;
