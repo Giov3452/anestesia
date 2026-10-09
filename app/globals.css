@@ -99,3 +99,17 @@
 
 /* Azioni generatore in riga, con ritorno a capo solo quando manca spazio */
 .generation-title-row{align-items:flex-start}.generator-links{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;min-width:0;max-width:100%}@media(max-width:950px){.generator-links{align-items:center;justify-content:flex-start;width:100%}.generation-title-row{align-items:flex-start}}@media(max-width:800px){.generator-links{align-items:center;justify-content:flex-start;width:100%}.page-action-link,.generator-links .generator-auto-link{display:inline-flex;align-items:center;justify-content:center;width:auto;min-height:38px;padding:9px 13px;border:1px solid var(--line);background:#f8fafc;border-radius:10px}.page-action-link:hover,.generator-links .generator-auto-link:hover{background:#eef3fb;border-color:#c5d5ef}.generator-clear-link{text-align:center;padding:9px 13px;border:1px solid #ffd6d2;background:#fff5f4;border-radius:10px;width:auto}}
+
+/* Turni generali: celle interattive e dettaglio assegnazioni mobile */
+.general-shifts-day{cursor:pointer;transition:background .15s,box-shadow .15s;outline:none}
+.general-shifts-day:hover{background:#f5f8ff;box-shadow:inset 0 0 0 2px #c5d5ef}
+.general-shifts-day:focus-visible{z-index:2;box-shadow:inset 0 0 0 3px #1d5fd1}
+.general-cell-hint{display:block;margin-top:6px;font-size:9px;font-weight:750;color:#7a879b;opacity:0}
+.general-shifts-day:hover .general-cell-hint,.general-shifts-day:focus-visible .general-cell-hint{opacity:1}
+.general-shifts-modal{width:min(560px,100%)}
+.general-assignment-row{align-items:center;gap:14px}
+.general-assignment-shift{display:grid;gap:4px;min-width:105px}
+.general-assignment-shift strong{display:inline-flex;align-items:center;justify-content:center;min-width:38px;width:max-content;padding:5px 8px;border-radius:7px;background:#eaf1ff;color:#174ea6;font-size:12px}
+.general-assignment-shift span{font-size:11px;color:#667085}
+.general-assignment-person{font-size:14px;font-weight:750;text-align:right;overflow-wrap:anywhere}
+@media(max-width:480px){.general-cell-hint{opacity:1;font-size:8px;margin-top:4px}.general-assignment-row{align-items:flex-start;padding:10px}.general-assignment-shift{min-width:90px}.general-assignment-person{font-size:13px;padding-top:5px}.general-shifts-modal{padding:15px}}
