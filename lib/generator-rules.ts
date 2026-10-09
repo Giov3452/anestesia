@@ -9,6 +9,7 @@ export type RuleKind =
   | "max_shifts_per_user_day"
   | "rest_after_shift"
   | "fair_distribution"
+  | "incentive_surplus"
   | "hide_shift"
   | "unknown";
 
@@ -54,7 +55,7 @@ export function normalizeWeekdays(values: unknown): number[] | null {
 export function validateParsedRule(value: unknown): value is ParsedGeneratorRule {
   if (!value || typeof value !== "object") return false;
   const r = value as Record<string, unknown>;
-  const kinds: RuleKind[] = ["require_shift_daily","require_shift_for_user","forbid_shift_for_user","forbid_shift_for_role","allowed_weekdays_for_role","max_shifts_per_user_day","rest_after_shift","fair_distribution","hide_shift","unknown"];
+  const kinds: RuleKind[] = ["require_shift_daily","require_shift_for_user","forbid_shift_for_user","forbid_shift_for_role","allowed_weekdays_for_role","max_shifts_per_user_day","rest_after_shift","fair_distribution","incentive_surplus","hide_shift","unknown"];
   if (r.version !== 1 || !["supported","needs_review"].includes(String(r.status)) || !kinds.includes(r.kind as RuleKind)) return false;
   if (!Array.isArray(r.shiftCodes) || !r.shiftCodes.every(x => typeof x === "string")) return false;
   if (r.weekdays !== null && !normalizeWeekdays(r.weekdays)) return false;
