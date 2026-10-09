@@ -33,6 +33,7 @@ export default function GeneralShifts(){
  const [profiles,setProfiles]=useState<Record<string,string>>({});
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
+ const [selectedDate,setSelectedDate]=useState<string|null>(null);
  const year=current.getFullYear();
  const month=current.getMonth();
 
@@ -79,10 +80,11 @@ export default function GeneralShifts(){
       :
       <div className="calendar" style={{marginTop:18}}>
        {weekdays.map(d=><div className="dow" key={d}>{d}</div>)}
-       {cells.map((day,i)=>!day?<div className="day empty" key={i}/>:<div className="day" key={i}><div className="date">{day}</div><div className="cell-shifts">{(byDate[dateKey(year,month,day)]||[]).map(x=><div className="calendar-shift-chip" key={x.id}><strong>{x.short_name}</strong> <span>{profiles[x.user_id]||"—"}</span></div>)}</div></div>)}
+       {cells.map((day,i)=>!day?<div className="day empty" key={i}/>:<div className="day general-shifts-day" key={i} role="button" tabIndex={0} aria-label={"Visualizza le assegnazioni del "+day+" "+new Intl.DateTimeFormat("it-IT",{month:"long"}).format(current)} onClick={()=>setSelectedDate(dateKey(year,month,day))} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setSelectedDate(dateKey(year,month,day));}}}><div className="date">{day}</div><div className="cell-shifts">{(byDate[dateKey(year,month,day)]||[]).map(x=><div className="calendar-shift-chip" key={x.id}><strong>{x.short_name}</strong> <span>{profiles[x.user_id]||"—"}</span></div>)}</div><span className="general-cell-hint">Dettagli</span></div>)}
       </div>
     }
    </section>
+   {selectedDate&&<div className="modal-backdrop" onClick={()=>setSelectedDate(null)}><section className="modal general-shifts-modal" role="dialog" aria-modal="true" aria-labelledby="general-shifts-detail-title" onClick={e=>e.stopPropagation()}><div className="modal-head"><div><p className="eyebrow" style={{margin:"0 0 5px"}}>Dettaglio assegnazioni</p><h2 id="general-shifts-detail-title">{new Intl.DateTimeFormat("it-IT",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date(selectedDate+"T12:00:00"))}</h2></div><button className="icon-btn" aria-label="Chiudi dettagli" onClick={()=>setSelectedDate(null)}>×</button></div>{(byDate[selectedDate]||[]).length===0?<p className="muted" style={{margin:"16px 0"}}>Nessun turno assegnato in questa giornata.</p>:<div className="day-assignment-list">{(byDate[selectedDate]||[]).map(x=><div className="assignment-row general-assignment-row" key={x.id}><div className="general-assignment-shift"><strong>{x.short_name}</strong><span>{labels[x.short_name]||x.short_name}</span></div><div className="general-assignment-person">{profiles[x.user_id]||"Dipendente non disponibile"}</div></div>)}</div>}<button className="btn btn-secondary" style={{width:"100%"}} onClick={()=>setSelectedDate(null)}>Chiudi</button></section></div>}
   </main>
  </div>;
 }
