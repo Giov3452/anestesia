@@ -344,8 +344,7 @@ export default function GenerateShifts(){
               .filter(x=>x.a.user_id===recipient.id&&x.a.source==="automatic"&&x.a.status==="draft"&&x.hours>0
                 && !["SN","RC","RG","RN","RP","R","Rp"].includes(x.a.short_name)
                 && x.hours<=excess+0.001
-                && !compiledRules.some(rule=>rule.kind==="require_shift_for_user"&&rule.username
-                  && usernameMatches(rule.username,recipient.username)&&rule.shiftCodes.includes(x.a.short_name)
+                && !compiledRules.some(rule=>rule.kind==="require_shift_for_user"&&rule.shiftCodes.includes(x.a.short_name)
                   && ruleAppliesOnDate(rule,x.a.shift_date,!!italianNationalHolidayName(x.a.shift_date))))
               .flatMap(x=>users.filter(donor=>donor.id!==recipient.id&&!hardBlocked(donor,x.a.shift_date,x.a.short_name))
                 .map(donor=>({...x,donor,remainingExcess:excess-x.hours})))
@@ -353,7 +352,7 @@ export default function GenerateShifts(){
               .sort((a,b)=>a.remainingExcess-b.remainingExcess);
             const chosen=candidates[0];
             if(!chosen)break;
-            added[chosen.index]={...chosen.a,user_id:chosen.donor.id,notes:\`\${chosen.a.notes?chosen.a.notes+" · ":""}Redistribuito per contenere il surplus incentivo di \${recipient.username}\`};
+            added[chosen.index]={...chosen.a,user_id:chosen.donor.id,notes:(chosen.a.notes?chosen.a.notes+" · ":"")+"Redistribuito per contenere il surplus incentivo di "+recipient.username};
             excess=currentHours(recipient.id)-recipientTarget;
           }
         }
