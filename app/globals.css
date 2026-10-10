@@ -113,3 +113,9 @@
 .general-assignment-shift span{font-size:11px;color:#667085}
 .general-assignment-person{font-size:14px;font-weight:750;text-align:right;overflow-wrap:anywhere}
 @media(max-width:480px){.general-cell-hint{opacity:1;font-size:8px;margin-top:4px}.general-assignment-row{align-items:flex-start;padding:10px}.general-assignment-shift{min-width:90px}.general-assignment-person{font-size:13px;padding-top:5px}.general-shifts-modal{padding:15px}}
+
+
+/* Gettonisti: disponibilità segnalate nel calendario del generatore */
+.request-dot.gettonista-dot{right:48px;background:#eab308;box-shadow:0 0 0 2px #eab30838,0 2px 7px #eab30850}
+.request-dot.static.gettonista-dot{position:static;display:inline-block;width:12px;height:12px;min-width:12px;border:0;margin-right:4px;vertical-align:-2px;box-shadow:none;cursor:default}
+.type-badge.disponibilita{background:#fef3c7;color:#92400e}
