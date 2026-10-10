@@ -10,7 +10,7 @@ type Shift={short_name:string;duration_minutes:number};
 
 const SALMON="#f7c9c1",OCRA="#e7c56a",GREEN="#c8e6c9",YELLOW="#fff3b0",BLUE="#cfe8ff";
 const fmt=(n:number)=>n.toFixed(2).replace(".",",");
-const roleLabel=(r:string)=>r==="calabria"?"Calabria":r==="part_time"?"Part-time":"Strutturato";
+const roleLabel=(r:string)=>r==="calabria"?"Calabria":r==="part_time"?"Part-time":r==="gettonista"?"Gettonista":"Strutturato";
 const SALA_EFFECTIVE_EXCLUDED=["RG","RN","RP","R","Rp","RC","SN"];
 const RIA_EFFECTIVE_EXCLUDED=["RG","RN","RP","R","Rp"];
 
