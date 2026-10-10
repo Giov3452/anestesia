@@ -54,7 +54,7 @@ export default function Requests(){
     ...vacations.map(x=>({kind:"ferie" as const,id:x.id,created_at:x.created_at,dateLabel:formatDate(x.start_date)+" – "+formatDate(x.end_date),detail:x.notes||"Periodo ferie"})),
     ...incentives.map(x=>({kind:"incentivo" as const,id:x.id,created_at:x.created_at,dateLabel:formatDate(x.request_month),detail:`Disponibilità incentivo: ${x.hours} h${x.notes?" · "+x.notes:""}`})),
     ...availability.map(x=>({kind:"disponibilita" as const,id:x.id,created_at:x.created_at,dateLabel:formatDate(x.availability_date),detail:`${causeLabel(x.cause)}${x.notes?" · "+x.notes:""}`}))
-  ].sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime()),[requests,vacations,incentives,availability]);
+  ].filter(row=>employmentRole!=="gettonista"||row.kind==="disponibilita").sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime()),[requests,vacations,incentives,availability,employmentRole]);
 
   async function load(){
     setLoading(true);
@@ -180,7 +180,7 @@ export default function Requests(){
         <div className="history-head"><div><h2>Richieste inviate</h2><p className="muted">Visualizza, modifica o cancella le richieste già inserite.</p></div></div>
         {loading?<p className="muted">Caricamento...</p>:history.length===0?<div className="empty-history">Non hai ancora inviato richieste.</div>:
           <div className="table-wrap"><table className="requests-table"><thead><tr><th>Data invio</th><th>Tipologia</th><th>Data / periodo</th><th className="action-col">Modifica</th><th className="action-col">Cancella</th></tr></thead><tbody>
-          {history.map(row=><tr key={row.kind+"-"+row.id}><td>{formatDateTime(row.created_at)}</td><td><span className={"type-badge "+(row.kind==="ferie"?"vacation":row.kind==="incentivo"?"incentivo":row.kind==="disponibilita"?"disponibilita":"desiderata")}>{row.kind==="ferie"?"Ferie":row.kind==="incentivo"?"Incentivo":row.kind==="disponibilita"?"Disponibilità":"Desiderata"}</span></td><td><strong>{row.dateLabel}</strong><div className="muted table-detail">{row.detail}</div></td><td className="action-cell"><button className="icon-btn edit" aria-label="Modifica richiesta" title="Modifica" onClick={()=>startEdit(row)}><Pencil size={17}/></button></td><td className="action-cell"><button className="icon-btn delete" aria-label="Cancella richiesta" title="Cancella" onClick={()=>remove(row)}><X size={19}/></button></td></tr>)}
+          {history.map(row=><tr key={row.kind+"-"+row.id}><td>{formatDateTime(row.created_at)}</td><td><span className={"type-badge "+(row.kind==="ferie"?"vacation":row.kind==="incentivo"?"incentivo":row.kind==="disponibilita"?"disponibilita":"desiderata")}>{row.kind==="ferie"?"Ferie":row.kind==="incentivo"?"Incentivo":row.kind==="disponibilita"?"Disponibilità":"Desiderata"}</span></td><td><strong>{row.dateLabel}</strong><div className="muted table-detail">{row.detail}</div></td><td className="action-cell">{row.kind!=="disponibilita"&&<button className="icon-btn edit" aria-label="Modifica richiesta" title="Modifica" onClick={()=>startEdit(row)}><Pencil size={17}/></button>}</td><td className="action-cell"><button className="icon-btn delete" aria-label="Cancella richiesta" title="Cancella" onClick={()=>remove(row)}><X size={19}/></button></td></tr>)}
           </tbody></table></div>}
       </section>
     </main>
