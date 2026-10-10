@@ -62,12 +62,12 @@ export default function PrintShiftsReport(){
    .paper-head p{margin:0;color:#333;font-size:15px;font-weight:800;letter-spacing:.25px}
    .paper-meta{text-align:right;font-size:10px;color:#555;line-height:1.6}
    .report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px;color:#111}
-   .report-table.anesthesia-report{width:98%;max-width:98%;margin-left:auto;margin-right:auto;table-layout:fixed}
-   .report-table.compact-report{width:170mm;max-width:170mm;margin-left:auto;margin-right:auto;table-layout:fixed}
+   .report-table.anesthesia-report{width:90%;max-width:90%;margin-left:auto;margin-right:auto;table-layout:fixed}
+   .report-table.compact-report{width:115mm;max-width:115mm;margin-left:auto;margin-right:auto;table-layout:fixed}
    .report-table.oncall-report{width:94mm!important;min-width:94mm!important;max-width:94mm!important;margin-left:auto!important;margin-right:auto!important;table-layout:fixed}
    .report-table.compact-report .day-col,.report-table.oncall-report .day-col{width:15mm}
    .report-table.compact-report .date-col,.report-table.oncall-report .date-col{width:10mm}
-   .report-table.compact-report .shift-col,.report-table.compact-report td.shift-col{width:29mm}
+   .report-table.compact-report .shift-col,.report-table.compact-report td.shift-col{width:18mm}
 .report-table.oncall-report .shift-col,.report-table.oncall-report td.shift-col{width:23mm}
    .report-table th,.report-table td{border:1px solid #aeb5be;padding:3px 2px;text-align:center;vertical-align:middle;overflow-wrap:anywhere}
    .report-table thead th{background:#e9edf1;color:#111;font-weight:800}
@@ -95,9 +95,9 @@ export default function PrintShiftsReport(){
     .paper-head h2{font-size:13px}
     .paper-head p{font-size:11px;font-weight:800}\n    .paper-meta{font-size:8px}
     .report-table{font-size:6.5px}
-    .report-table.anesthesia-report{width:98%!important;max-width:98%!important;margin-left:auto!important;margin-right:auto!important}
-    .report-table.compact-report{width:170mm!important;max-width:170mm!important;margin-left:auto!important;margin-right:auto!important}
-    .report-table.compact-report .shift-col,.report-table.compact-report td.shift-col{width:29mm!important;min-width:29mm!important;max-width:29mm!important}
+    .report-table.anesthesia-report{width:90%!important;max-width:90%!important;margin-left:auto!important;margin-right:auto!important}
+    .report-table.compact-report{width:115mm!important;max-width:115mm!important;margin-left:auto!important;margin-right:auto!important}
+    .report-table.compact-report .shift-col,.report-table.compact-report td.shift-col{width:18mm!important;min-width:18mm!important;max-width:18mm!important}
     .report-table th,.report-table td{padding:2px 1px;line-height:1.12}
     .report-table thead tr:first-child th{font-size:6px}
     .report-table thead tr:nth-child(2) th{font-size:6.5px}
