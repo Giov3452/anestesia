@@ -206,7 +206,7 @@ export default function GenerateShifts(){
       const weekendKey=(date:string)=>{const d=new Date(date+"T00:00:00"),dow=d.getDay();if(dow===0)d.setDate(d.getDate()-1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
       const weekendCount=(uid:string)=>{const keys=new Set<string>();for(const a of allAssignments()){if(a.user_id!==uid||a.short_name==="SN")continue;const dow=new Date(a.shift_date+"T00:00:00").getDay();if(dow===0||dow===6)keys.add(weekendKey(a.shift_date));}return keys.size;};
       const weekendShiftCount=(uid:string)=>allAssignments().filter(a=>{if(a.user_id!==uid||a.short_name==="SN")return false;const dow=new Date(a.shift_date+"T00:00:00").getDay();return dow===0||dow===6;}).length;
-      const roleRate=(u:User)=>u.employment_role==="calabria"?6.4:u.employment_role==="part_time"?8:7.6;
+      const roleRate=(u:User)=>u.employment_role==="gettonista"?0:u.employment_role==="calabria"?6.4:u.employment_role==="part_time"?8:7.6;
       const baseTargetHours=(u:User)=>{let h=0;for(let d=1;d<=daysInMonth;d++){const date=iso(y,m,d),dow=new Date(date+"T00:00:00").getDay();if(dow===0||dow===6||italianNationalHolidayName(date))continue;if(u.employment_role==="part_time"&&partTimeDaysLimited&&!([1,2,3].includes(dow)))continue;h+=roleRate(u);}return h;};
       const incentiveRule=rules.find(r=>r.enabled&&r.config?.parsed_rule?.status==="supported"&&r.config?.parsed_rule?.kind==="incentive_surplus");
       const incentiveConstraintEnabled=Boolean(incentiveRule);
@@ -220,6 +220,7 @@ export default function GenerateShifts(){
       const previousDay=(date:string)=>{const d=new Date(date+"T00:00:00");d.setDate(d.getDate()-1);return iso(d.getFullYear(),d.getMonth(),d.getDate());};
       const hadNight=(uid:string,date:string)=>allAssignments().some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name==="N")||((old||[]) as any[]).some(a=>a.user_id===uid&&a.short_name==="N");
       const hardBlocked=(u:User,date:string,code:string)=>{
+        if(u.employment_role==="gettonista")return true;
         if(u.service!=="anestesia")return true;
         if(vacation(u.id,date)||requestBlocksCode(reqFor(u.id,date),code))return true;
         const dow=new Date(date+"T00:00:00").getDay(),weekend=dow===0||dow===6,holiday=!!italianNationalHolidayName(date);
