@@ -56,14 +56,14 @@ export default function PrintShiftsReport(){
    .report-actions{display:flex;gap:9px;align-items:center}
    .report-button{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #cbd3df;border-radius:9px;background:white;color:#182230;font-size:13px;font-weight:700;text-decoration:none;cursor:pointer}
    .report-button.primary{background:#1f2937;color:white;border-color:#1f2937}
-   .paper{background:white;padding:18px;border:1px solid #d8dee8;box-shadow:0 8px 30px #17203312;margin-bottom:18px}\n   .paper.sheet-page{break-before:page;page-break-before:always}
+   .paper{background:white;padding:18px;border:1px solid #d8dee8;box-shadow:0 8px 30px #17203312;margin-bottom:18px}\n   .paper.sheet-page{break-before:page!important;page-break-before:always!important}
    .paper-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #252b33;padding-bottom:9px;margin-bottom:10px}
    .paper-head h2{font-size:19px;letter-spacing:.6px;text-transform:uppercase;margin:0 0 4px}
    .paper-head p{margin:0;color:#333;font-size:15px;font-weight:800;letter-spacing:.25px}
    .paper-meta{text-align:right;font-size:10px;color:#555;line-height:1.6}
    .report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px;color:#111}
    .report-table.compact-report{width:190mm;max-width:100%;margin-left:auto;margin-right:auto;table-layout:fixed}
-   .report-table.oncall-report{width:94mm;max-width:100%;margin-left:auto;margin-right:auto;table-layout:fixed}
+   .report-table.oncall-report{width:94mm!important;min-width:94mm!important;max-width:94mm!important;margin-left:auto!important;margin-right:auto!important;table-layout:fixed}
    .report-table.compact-report .day-col,.report-table.oncall-report .day-col{width:15mm}
    .report-table.compact-report .date-col,.report-table.oncall-report .date-col{width:10mm}
    .report-table.compact-report .shift-col,.report-table.compact-report td.shift-col{width:33mm}
@@ -87,7 +87,7 @@ export default function PrintShiftsReport(){
     body{background:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .report-shell{max-width:none;padding:0;margin:0}
     .report-toolbar{display:none!important}
-    .paper{border:0;box-shadow:none;padding:0;margin:0}\n    .paper.sheet-page{break-before:page;page-break-before:always}
+    .paper{border:0;box-shadow:none;padding:0;margin:0;break-after:page!important;page-break-after:always!important;break-inside:avoid!important;page-break-inside:avoid!important}\n    .paper:last-of-type{break-after:auto!important;page-break-after:auto!important}\n    .paper.sheet-page{break-before:page!important;page-break-before:always!important}\n    .report-table.oncall-report{width:94mm!important;min-width:94mm!important;max-width:94mm!important;margin-left:auto!important;margin-right:auto!important;table-layout:fixed!important}\n    .report-table.oncall-report .shift-col,.report-table.oncall-report td.shift-col{width:23mm!important;min-width:23mm!important;max-width:23mm!important}
     .paper-head{padding-bottom:5px;margin-bottom:5px}
     .paper-head h2{font-size:13px}
     .paper-head p{font-size:11px;font-weight:800}\n    .paper-meta{font-size:8px}
