@@ -7,8 +7,6 @@ import {CalendarDays} from "lucide-react";
 export const dynamic = "force-dynamic";
 
 const weekdays=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
-const shiftLabels:Record<string,string>={G:"Giorno",N:"Notte",M1:"M1",M2:"M2",M3:"M3",mp:"Mattino + pomeriggio",RC:"Riposo compensativo",E:"Endoscopia",MRia:"Mattina Rianimazione",GRia:"Guardia Rianimazione",NRia:"Notte Rianimazione",RG:"Reperibilità giorno",RN:"Reperibilità notte",RP:"Reperibilità pomeriggio",FT:"Fuori turno"};
-
 function buildCalendar(year:number,month:number){
   const first=new Date(year,month,1);
   const daysInMonth=new Date(year,month+1,0).getDate();
@@ -34,9 +32,14 @@ export default async function Dashboard(){
   const month=now.getMonth()+1;
   const {data:status}=await s.from("calendar_month_status").select("validated").eq("year",year).eq("month",month).maybeSingle();
   const validated=status?.validated===true;
-  const {data:shifts}=validated
-    ? await s.from("calendar_shifts").select("shift_date,short_name").eq("user_id",user.id).order("shift_date")
-    : {data:[] as {shift_date:string;short_name:string}[]};
+  const monthStart=dateKey(year,month-1,1);
+  const monthEnd=dateKey(year,month-1,new Date(year,month,0).getDate());
+  const [{data:shifts},{data:vacations}]=await Promise.all([
+    validated
+      ? s.from("calendar_shifts").select("shift_date,short_name").eq("user_id",user.id).gte("shift_date",monthStart).lte("shift_date",monthEnd).order("shift_date")
+      : Promise.resolve({data:[] as {shift_date:string;short_name:string}[]}),
+    s.from("vacations").select("start_date,end_date").eq("user_id",user.id).lte("start_date",monthEnd).gte("end_date",monthStart),
+  ]);
 
   const name=p?.username||user.user_metadata?.username||user.email?.split("@")[0]||"";
   const calendarMonth=month-1;
@@ -48,6 +51,14 @@ export default async function Dashboard(){
     if(!list.includes(shift.short_name))list.push(shift.short_name);
     return acc;
   },{});
+  const vacationDates=new Set<string>();
+  for(const vacation of vacations||[]){
+    const start=vacation.start_date>monthStart?vacation.start_date:monthStart;
+    const end=vacation.end_date<monthEnd?vacation.end_date:monthEnd;
+    for(let cursor=new Date(start+"T12:00:00");cursor<=new Date(end+"T12:00:00");cursor.setDate(cursor.getDate()+1)){
+      vacationDates.add(dateKey(cursor.getFullYear(),cursor.getMonth(),cursor.getDate()));
+    }
+  }
 
   return <div className="shell dashboard-shell">
     <header className="appbar">
@@ -87,7 +98,8 @@ export default async function Dashboard(){
               const dayShifts=shiftsByDate[key]||[];
               return <div className="day" key={key}>
                 <div className="date">{day}</div>
-                {dayShifts.map(type=><div className="shift" key={type}>{type} · {shiftLabels[type]||type}</div>)}
+                {dayShifts.map(type=><div className="shift" key={type}>{type}</div>)}
+                {vacationDates.has(key)&&<div className="shift vacation-label">FERIE</div>}
               </div>;
             })}
           </div>
