@@ -374,7 +374,7 @@ export default function GenerateShifts(){
           objective+=counts.reduce((sum,n)=>sum+Math.pow(n-avg,2),0)*250;
         }
         for(const code of ["G","N","M1","M2","M3","Mo2","FT","E"]){
-          const eligible=users.filter(u=>u.service==="anestesia"&&( !["G","N"].includes(code)|| (u.employment_role!=="part_time"&&u.id!==rissottiUser?.id) ));
+          const eligible=users.filter(u=>u.service==="anestesia"&&u.employment_role!=="gettonista"&&( !["G","N"].includes(code)|| (u.employment_role!=="part_time"&&u.id!==rissottiUser?.id) ));
           if(eligible.length<2)continue;
           const counts=eligible.map(u=>allAssignments().filter(a=>a.user_id===u.id&&a.short_name===code).length);
           const avg=counts.reduce((a,b)=>a+b,0)/counts.length;
