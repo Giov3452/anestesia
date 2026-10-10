@@ -13,7 +13,7 @@ type Shift={user_id:string;short_name:string;shift_date:string;duration_minutes:
 
 const SALMON="#f7c9c1", OCRA="#e7c56a", GREEN="#c8e6c9", YELLOW="#fff3b0", BLUE="#cfe8ff";
 const fmt=(n:number)=>n.toFixed(2).replace(".",",");
-const roleLabel=(r:string)=>r==="calabria"?"Calabria":r==="part_time"?"Part-time":"Strutturato";
+const roleLabel=(r:string)=>r==="calabria"?"Calabria":r==="part_time"?"Part-time":r==="gettonista"?"Gettonista":"Strutturato";
 
 export default function Counters(){
  const [authorized,setAuthorized]=useState<boolean|null>(null);
