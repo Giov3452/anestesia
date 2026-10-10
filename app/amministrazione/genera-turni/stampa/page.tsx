@@ -63,10 +63,11 @@ export default function PrintShiftsReport(){
    .paper-meta{text-align:right;font-size:10px;color:#555;line-height:1.6}
    .report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px;color:#111}
    .report-table.compact-report{width:190mm;max-width:100%;margin-left:auto;margin-right:auto;table-layout:fixed}
-   .report-table.oncall-report{width:124mm;max-width:100%;margin-left:auto;margin-right:auto;table-layout:fixed}
+   .report-table.oncall-report{width:94mm;max-width:100%;margin-left:auto;margin-right:auto;table-layout:fixed}
    .report-table.compact-report .day-col,.report-table.oncall-report .day-col{width:15mm}
    .report-table.compact-report .date-col,.report-table.oncall-report .date-col{width:10mm}
-   .report-table.compact-report .shift-col,.report-table.oncall-report .shift-col,.report-table.compact-report td.shift-col,.report-table.oncall-report td.shift-col{width:33mm}
+   .report-table.compact-report .shift-col,.report-table.compact-report td.shift-col{width:33mm}
+.report-table.oncall-report .shift-col,.report-table.oncall-report td.shift-col{width:23mm}
    .report-table th,.report-table td{border:1px solid #aeb5be;padding:3px 2px;text-align:center;vertical-align:middle;overflow-wrap:anywhere}
    .report-table thead th{background:#e9edf1;color:#111;font-weight:800}
    .report-table thead tr:first-child th{font-size:8px;text-transform:uppercase;letter-spacing:.15px;background:#dfe4e9}
