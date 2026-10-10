@@ -50,7 +50,7 @@ export default function PersonalCounters(){
     const to=new Date(year,month+1,0).toISOString().slice(0,10);
     const {data:rows,error:re}=await s.from("calendar_shifts").select("short_name").eq("user_id",user.id).gte("shift_date",from).lte("shift_date",to);
     if(re){setError(re.message);setLoading(false);return}
-    setShifts((rows||[]).map((x:any)=>({short_name:x.short_name,duration_minutes:durations.get(x.short_name)||0})));
+    setShifts((rows||[]).filter((x:any)=>x.short_name!=="SN").map((x:any)=>({short_name:x.short_name,duration_minutes:durations.get(x.short_name)||0})));
     setLoading(false);
   })()},[year,month,realtimeTick]);
 
@@ -68,7 +68,7 @@ export default function PersonalCounters(){
     const hours=(...codes:string[])=>shifts.filter(x=>codes.includes(x.short_name)).reduce((a,x)=>a+x.duration_minutes/60,0);
     const effective=shifts.filter(x=>!SALA_EFFECTIVE_EXCLUDED.includes(x.short_name)).reduce((a,x)=>a+x.duration_minutes/60,0);
     const theoretical=theoreticalMonthlyHours(year,month,profile.employment_role);
-    return {theoretical,effective,eccesso:effective-theoretical,mattine:hours("M1","M2","M3"),pomeriggi:hours("P"),ft:hours("FT"),endoscopia:hours("E"),guardie:hours("G"),notti:hours("N"),mortara:hours("Mo1","Mo2"),ria:hours("MRia","GRia","NRia"),reperibilita:hours("RG","RN","RP"),rg:hours("RG"),rn:hours("RN"),rp:hours("RP")};
+    return {theoretical,effective,eccesso:effective-theoretical,mattine:hours("M1","M2","M3"),mattineN:shifts.filter(x=>["M1","M2","M3"].includes(x.short_name)).length,pomeriggi:hours("P"),pomeriggiN:shifts.filter(x=>x.short_name==="P").length,ft:hours("FT"),ftN:shifts.filter(x=>x.short_name==="FT").length,endoscopia:hours("E"),endoscopiaN:shifts.filter(x=>x.short_name==="E").length,guardie:hours("G","Gm","Gp"),guardieN:shifts.filter(x=>["G","Gm","Gp"].includes(x.short_name)).length,notti:hours("N"),nottiN:shifts.filter(x=>x.short_name==="N").length,mortara:hours("Mo1","Mo2"),mortaraN:shifts.filter(x=>["Mo1","Mo2"].includes(x.short_name)).length,ria:hours("MRia","GRia","NRia"),riaN:shifts.filter(x=>["MRia","GRia","NRia"].includes(x.short_name)).length,reperibilita:hours("RG","RN","RP"),reperibilitaN:shifts.filter(x=>["RG","RN","RP"].includes(x.short_name)).length,rg:hours("RG"),rgN:shifts.filter(x=>x.short_name==="RG").length,rn:hours("RN"),rnN:shifts.filter(x=>x.short_name==="RN").length,rp:hours("RP"),rpN:shifts.filter(x=>x.short_name==="RP").length};
   },[profile,shifts,year,month]);
 
   const ria=useMemo(()=>{
@@ -76,11 +76,12 @@ export default function PersonalCounters(){
     const hours=(...codes:string[])=>shifts.filter(x=>codes.includes(x.short_name)).reduce((a,x)=>a+x.duration_minutes/60,0);
     const effective=shifts.filter(x=>!RIA_EFFECTIVE_EXCLUDED.includes(x.short_name)).reduce((a,x)=>a+x.duration_minutes/60,0);
     const theoretical=theoreticalMonthlyHours(year,month,profile.employment_role);
-    return {theoretical,effective,eccesso:effective-theoretical,endoscopia:hours("E"),mria:hours("MRia"),gria:hours("GRia"),nria:hours("NRia"),reperibilita:hours("RG","RN","RP"),rg:hours("RG"),rn:hours("RN"),rp:hours("RP")};
+    return {theoretical,effective,eccesso:effective-theoretical,endoscopia:hours("E"),endoscopiaN:shifts.filter(x=>x.short_name==="E").length,mria:hours("MRia"),mriaN:shifts.filter(x=>x.short_name==="MRia").length,gria:hours("GRia"),griaN:shifts.filter(x=>x.short_name==="GRia").length,nria:hours("NRia"),nriaN:shifts.filter(x=>x.short_name==="NRia").length,reperibilita:hours("RG","RN","RP"),reperibilitaN:shifts.filter(x=>["RG","RN","RP"].includes(x.short_name)).length,rg:hours("RG"),rgN:shifts.filter(x=>x.short_name==="RG").length,rn:hours("RN"),rnN:shifts.filter(x=>x.short_name==="RN").length,rp:hours("RP"),rpN:shifts.filter(x=>x.short_name==="RP").length};
   },[profile,shifts,year,month]);
 
   const th=(label:string,bg:string)=><th style={{background:bg,color:"#18212f",minWidth:label==="Dipendente"?145:88,padding:"10px 6px"}}>{label}</th>;
   const td=(value:number,bg:string)=><td style={{background:bg,fontVariantNumeric:"tabular-nums",fontWeight:650,textAlign:"center",padding:"9px 6px"}}>{fmt(value)}</td>;
+  const metric=(hours:number,count:number,bg:string)=><td style={{background:bg,padding:0,minWidth:88}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",minHeight:35,height:"100%"}}><span title="Ore" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"7px 3px",fontWeight:650,fontVariantNumeric:"tabular-nums",borderRight:"1px solid rgba(24,33,47,.16)"}}>{fmt(hours)}</span><span title="Numero di turni" style={{display:"flex",alignItems:"center",justifyContent:"center",padding:"7px 3px",fontWeight:750,fontVariantNumeric:"tabular-nums"}}>{count}</span></div></td>;
 
   if(loading&&!profile)return <section className="calendar-card" style={{marginTop:18}}><div className="card" style={{margin:0,textAlign:"center"}}>Caricamento…</div></section>;
 
@@ -103,13 +104,13 @@ export default function PersonalCounters(){
         ? <div style={{overflowX:"auto",marginTop:18}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:2,fontSize:12}}><thead><tr>
             {th("Dipendente","#eef2f6")}{th("Teorico ore",SALMON)}{th("Ore effettive",SALMON)}{th("Esubero ore",YELLOW)}{th("Mattine",SALMON)}{th("Pomeriggi",SALMON)}{th("FT",SALMON)}{th("Endoscopia E",SALMON)}{th("Guardia G",SALMON)}{th("Notti N",SALMON)}{th("Mortara",BLUE)}{th("Rianimazione",OCRA)}{th("Reperibilità",GREEN)}{th("RG",GREEN)}{th("RN",GREEN)}{th("RP",GREEN)}
           </tr></thead><tbody><tr><td style={{fontWeight:800,whiteSpace:"nowrap",padding:"9px 8px",background:"#f8fafc"}}><div>{profile.username}</div><small style={{fontWeight:500,color:"#667085"}}>{roleLabel(profile.employment_role)}</small></td>
-            {td(sala.theoretical,SALMON)}{td(sala.effective,SALMON)}{td(sala.eccesso,YELLOW)}{td(sala.mattine,SALMON)}{td(sala.pomeriggi,SALMON)}{td(sala.ft,SALMON)}{td(sala.endoscopia,SALMON)}{td(sala.guardie,SALMON)}{td(sala.notti,SALMON)}{td(sala.mortara,BLUE)}{td(sala.ria,OCRA)}{td(sala.reperibilita,GREEN)}{td(sala.rg,GREEN)}{td(sala.rn,GREEN)}{td(sala.rp,GREEN)}
+            {td(sala.theoretical,SALMON)}{td(sala.effective,SALMON)}{td(sala.eccesso,YELLOW)}{metric(sala.mattine,sala.mattineN,SALMON)}{metric(sala.pomeriggi,sala.pomeriggiN,SALMON)}{metric(sala.ft,sala.ftN,SALMON)}{metric(sala.endoscopia,sala.endoscopiaN,SALMON)}{metric(sala.guardie,sala.guardieN,SALMON)}{metric(sala.notti,sala.nottiN,SALMON)}{metric(sala.mortara,sala.mortaraN,BLUE)}{metric(sala.ria,sala.riaN,OCRA)}{metric(sala.reperibilita,sala.reperibilitaN,GREEN)}{metric(sala.rg,sala.rgN,GREEN)}{metric(sala.rn,sala.rnN,GREEN)}{metric(sala.rp,sala.rpN,GREEN)}
           </tr></tbody></table></div>
         : profile?.service==="rianimazione"&&ria
           ? <div style={{overflowX:"auto",marginTop:18}}><table style={{width:"100%",borderCollapse:"separate",borderSpacing:2,fontSize:12}}><thead><tr>
               {th("Dipendente","#eef2f6")}{th("Teorico ore",SALMON)}{th("Ore effettive",SALMON)}{th("Esubero ore",YELLOW)}{th("Endoscopia E",SALMON)}{th("MRia",OCRA)}{th("GRia",OCRA)}{th("NRia",OCRA)}{th("Reperibilità",GREEN)}{th("RG",GREEN)}{th("RN",GREEN)}{th("RP",GREEN)}
             </tr></thead><tbody><tr><td style={{fontWeight:800,whiteSpace:"nowrap",padding:"9px 8px",background:"#f8fafc"}}><div>{profile.username}</div><small style={{fontWeight:500,color:"#667085"}}>{roleLabel(profile.employment_role)}</small></td>
-              {td(ria.theoretical,SALMON)}{td(ria.effective,SALMON)}{td(ria.eccesso,YELLOW)}{td(ria.endoscopia,SALMON)}{td(ria.mria,OCRA)}{td(ria.gria,OCRA)}{td(ria.nria,OCRA)}{td(ria.reperibilita,GREEN)}{td(ria.rg,GREEN)}{td(ria.rn,GREEN)}{td(ria.rp,GREEN)}
+              {td(ria.theoretical,SALMON)}{td(ria.effective,SALMON)}{td(ria.eccesso,YELLOW)}{metric(ria.endoscopia,ria.endoscopiaN,SALMON)}{metric(ria.mria,ria.mriaN,OCRA)}{metric(ria.gria,ria.griaN,OCRA)}{metric(ria.nria,ria.nriaN,OCRA)}{metric(ria.reperibilita,ria.reperibilitaN,GREEN)}{metric(ria.rg,ria.rgN,GREEN)}{metric(ria.rn,ria.rnN,GREEN)}{metric(ria.rp,ria.rpN,GREEN)}
             </tr></tbody></table></div>
           : null}
   </section>;
