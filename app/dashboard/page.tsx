@@ -7,7 +7,7 @@ import {CalendarDays} from "lucide-react";
 export const dynamic = "force-dynamic";
 
 const weekdays=["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
-const shiftLabels:Record<string,string>={G:"Giorno",N:"Notte",M1:"M1",M2:"M2",M3:"M3",mp:"Mattino + pomeriggio",RC:"Riposo compensativo",E:"Endoscopia",MRia:"Mattina Rianimazione",GRia:"Guardia Rianimazione",NRia:"Notte Rianimazione",RG:"Reperibilità giorno",RN:"Reperibilità notte",RP:"Reperibilità pomeriggio",SN:"Smonto notte",FT:"Fuori turno"};
+const shiftLabels:Record<string,string>={G:"Giorno",N:"Notte",M1:"M1",M2:"M2",M3:"M3",mp:"Mattino + pomeriggio",RC:"Riposo compensativo",E:"Endoscopia",MRia:"Mattina Rianimazione",GRia:"Guardia Rianimazione",NRia:"Notte Rianimazione",RG:"Reperibilità giorno",RN:"Reperibilità notte",RP:"Reperibilità pomeriggio",FT:"Fuori turno"};
 
 function buildCalendar(year:number,month:number){
   const first=new Date(year,month,1);
@@ -43,7 +43,9 @@ export default async function Dashboard(){
   const cells=buildCalendar(year,calendarMonth);
   const monthName=new Intl.DateTimeFormat("it-IT",{month:"long",year:"numeric"}).format(now);
   const shiftsByDate=(shifts||[]).reduce<Record<string,string[]>>((acc,shift)=>{
-    (acc[shift.shift_date]??=[]).push(shift.short_name);
+    if(shift.short_name==="SN")return acc;
+    const list=acc[shift.shift_date]??=[];
+    if(!list.includes(shift.short_name))list.push(shift.short_name);
     return acc;
   },{});
 
