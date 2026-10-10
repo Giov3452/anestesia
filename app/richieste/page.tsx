@@ -168,13 +168,13 @@ export default function Requests(){
       {message&&<div className="success">{message}</div>}
       {error&&!open&&<div className="error">{error}</div>}
 
-      <div className="request-links">
+      {!loading&&<div className="request-links">
         {employmentRole==="gettonista"?<button className="request-link-card" onClick={startAvailability}><span><strong>Invia Disponibilità</strong><small>Indica una o più date e la relativa fascia di disponibilità.</small></span><Plus size={22}/></button>:<>
         <button className="request-link-card" onClick={()=>startNew("desiderata")}><span><strong>Inserimento Desiderata</strong><small>Seleziona anche più giorni non contigui.</small></span><Plus size={22}/></button>
         <button className="request-link-card" onClick={()=>startNew("ferie")}><span><strong>Inserimento Ferie</strong><small>Inserisci il periodo continuativo di ferie.</small></span><Plus size={22}/></button>
         <button className="request-link-card" onClick={startIncentive}><span><strong>Disponibilità incentivo</strong><small>Indica le ore disponibili per incentivo in un mese.</small></span><Plus size={22}/></button>
         </>}
-      </div>
+      </div>}
 
       <section className="card request-history">
         <div className="history-head"><div><h2>Richieste inviate</h2><p className="muted">Visualizza, modifica o cancella le richieste già inserite.</p></div></div>
