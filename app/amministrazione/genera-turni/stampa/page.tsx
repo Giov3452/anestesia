@@ -42,6 +42,7 @@ export default function PrintShiftsReport(){
  const sectionName=(code:string)=>{if(["G","GRia"].includes(code))return "GUARDIA";if(code==="FT")return "FUORI TURNO";if(["N","NRia"].includes(code))return "NOTTE";if(["M1","M2","M3"].includes(code))return "SALE";if(["Mo1","Mo2"].includes(code))return "MORTARA";if(code==="E")return "ENDOSCOPIA";return "ALTRI TURNI"};
  const groups=useMemo(()=>{const out:{name:string;span:number}[]=[];for(const c of columns){const name=sectionName(c.short_name);const last=out[out.length-1];if(last&&last.name===name)last.span++;else out.push({name,span:1})}return out},[columns]);
  const days=useMemo(()=>Array.from({length:new Date(year,month+1,0).getDate()},(_,i)=>i+1),[year,month]);
+ const anesthesiaShiftWidth=Math.max(8,(258.3-22)/Math.max(columns.length,1));
  const assignments=useMemo(()=>{const map:Record<string,Record<string,string[]>>={};for(const a of shifts){const day=map[a.shift_date]??(map[a.shift_date]={});const peopleForShift=day[a.short_name]??(day[a.short_name]=[]);const name=people[a.user_id];if(name)peopleForShift.push(surname(name))}return map},[shifts,people]);
  const dateLabel=(day:number)=>new Date(year,month,day).toLocaleDateString("it-IT",{day:"2-digit",month:"2-digit"});
  const weekend=(day:number)=>{const w=new Date(year,month,day).getDay();return w===0||w===6};
@@ -63,11 +64,11 @@ export default function PrintShiftsReport(){
    .paper-meta{text-align:right;font-size:10px;color:#555;line-height:1.6}
    .report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px;color:#111}
    .report-table.anesthesia-report{width:90%;max-width:90%;margin-left:auto;margin-right:auto;table-layout:fixed}
-   .report-table.compact-report{width:115mm;max-width:115mm;margin-left:auto;margin-right:auto;table-layout:fixed}
+   .report-table.compact-report{width:auto;max-width:none;margin-left:auto;margin-right:auto;table-layout:fixed}
    .report-table.oncall-report{width:94mm!important;min-width:94mm!important;max-width:94mm!important;margin-left:auto!important;margin-right:auto!important;table-layout:fixed}
    .report-table.compact-report .day-col,.report-table.oncall-report .day-col{width:15mm}
    .report-table.compact-report .date-col,.report-table.oncall-report .date-col{width:10mm}
-   .report-table.compact-report .shift-col,.report-table.compact-report td.shift-col{width:18mm}
+   
 .report-table.oncall-report .shift-col,.report-table.oncall-report td.shift-col{width:23mm}
    .report-table th,.report-table td{border:1px solid #aeb5be;padding:3px 2px;text-align:center;vertical-align:middle;overflow-wrap:anywhere}
    .report-table thead th{background:#e9edf1;color:#111;font-weight:800}
@@ -96,8 +97,8 @@ export default function PrintShiftsReport(){
     .paper-head p{font-size:11px;font-weight:800}\n    .paper-meta{font-size:8px}
     .report-table{font-size:6.5px}
     .report-table.anesthesia-report{width:90%!important;max-width:90%!important;margin-left:auto!important;margin-right:auto!important}
-    .report-table.compact-report{width:115mm!important;max-width:115mm!important;margin-left:auto!important;margin-right:auto!important}
-    .report-table.compact-report .shift-col,.report-table.compact-report td.shift-col{width:18mm!important;min-width:18mm!important;max-width:18mm!important}
+    .report-table.compact-report{width:auto!important;max-width:none!important;margin-left:auto!important;margin-right:auto!important}
+    
     .report-table th,.report-table td{padding:2px 1px;line-height:1.12}
     .report-table thead tr:first-child th{font-size:6px}
     .report-table thead tr:nth-child(2) th{font-size:6.5px}
@@ -116,7 +117,7 @@ export default function PrintShiftsReport(){
     {title:"TURNI REPERIBILITÀ",tableColumns:reperibilityColumns,tableGroups:reperibilityGroups,page:3},
   ].map((sheet,index)=><section className={`paper ${index>0?"sheet-page":""}`} key={sheet.title}>
     <div className="paper-head"><div><h2>Turni · {months[month]} {year}</h2><p>{sheet.title}</p></div><div className="paper-meta">TURNI OSPEDALIERI<br/>Report generato il {new Date().toLocaleDateString("it-IT")}<br/>{shifts.filter(s=>sheet.tableColumns.some(col=>col.short_name===s.short_name)).length} assegnazioni</div></div>
-    {loading?<p>Caricamento calendario…</p>:sheet.tableColumns.length===0?<p>Nessun turno assegnato per il mese selezionato.</p>:<table className={`report-table ${index===0?"anesthesia-report":index===1?"compact-report":index===2?"oncall-report":""}`}><thead><tr><th className="day-col" rowSpan={2}>Giorno</th><th className="date-col" rowSpan={2}>Data</th>{sheet.tableGroups.map((g,i)=><th key={i} colSpan={g.span}>{g.name}</th>)}</tr><tr>{sheet.tableColumns.map(col=><th className="shift-col" key={col.id}>{col.short_name}</th>)}</tr></thead><tbody>{days.map(day=>{const date=iso(year,month,day),holiday=italianNationalHolidayName(date),isW=weekend(day);return <tr key={date} className={holiday?"holiday":isW?"weekend":""}><td className="day-col">{weekday(date).toLocaleUpperCase("it-IT")}</td><td className="date-col">{dateLabel(day)}</td>{sheet.tableColumns.map(col=>{const names=assignments[date]?.[col.short_name]||[];return <td key={col.id} className={`${names.length?"shift-name":"empty-cell"} shift-col`} title={names.join(", ")}>{names.length?names.join(" / "):"—"}</td>})}</tr>})}</tbody></table>}
+    {loading?<p>Caricamento calendario…</p>:sheet.tableColumns.length===0?<p>Nessun turno assegnato per il mese selezionato.</p>:<table style={index===1?{width:`${22+anesthesiaShiftWidth*sheet.tableColumns.length}mm`,maxWidth:"none"}:undefined} className={`report-table ${index===0?"anesthesia-report":index===1?"compact-report":index===2?"oncall-report":""}`}><thead><tr><th className="day-col" rowSpan={2}>Giorno</th><th className="date-col" rowSpan={2}>Data</th>{sheet.tableGroups.map((g,i)=><th key={i} colSpan={g.span}>{g.name}</th>)}</tr><tr>{sheet.tableColumns.map(col=><th className="shift-col" style={index<2?{width:`${anesthesiaShiftWidth}mm`}:undefined} key={col.id}>{col.short_name}</th>)}</tr></thead><tbody>{days.map(day=>{const date=iso(year,month,day),holiday=italianNationalHolidayName(date),isW=weekend(day);return <tr key={date} className={holiday?"holiday":isW?"weekend":""}><td className="day-col">{weekday(date).toLocaleUpperCase("it-IT")}</td><td className="date-col">{dateLabel(day)}</td>{sheet.tableColumns.map(col=>{const names=assignments[date]?.[col.short_name]||[];return <td key={col.id} style={index<2?{width:`${anesthesiaShiftWidth}mm`}:undefined} className={`${names.length?"shift-name":"empty-cell"} shift-col`} title={names.join(", ")}>{names.length?names.join(" / "):"—"}</td>})}</tr>})}</tbody></table>}
     {!loading&&<div className="report-foot"><span>Le celle vuote sono indicate con un trattino. I nominativi riportano il cognome in maiuscolo.</span><span>{months[month]} {year} · Pagina {sheet.page} di 3</span></div>}
   </section>)}
  </main>
