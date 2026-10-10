@@ -59,7 +59,7 @@ export default function PrintShiftsReport(){
    .paper{background:white;padding:18px;border:1px solid #d8dee8;box-shadow:0 8px 30px #17203312;margin-bottom:18px}\n   .paper.sheet-page{break-before:page;page-break-before:always}
    .paper-head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #252b33;padding-bottom:9px;margin-bottom:10px}
    .paper-head h2{font-size:19px;letter-spacing:.6px;text-transform:uppercase;margin:0 0 4px}
-   .paper-head p{margin:0;color:#333;font-size:9px;font-weight:800;letter-spacing:.25px}
+   .paper-head p{margin:0;color:#333;font-size:15px;font-weight:800;letter-spacing:.25px}
    .paper-meta{text-align:right;font-size:10px;color:#555;line-height:1.6}
    .report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px;color:#111}
    .report-table th,.report-table td{border:1px solid #aeb5be;padding:3px 2px;text-align:center;vertical-align:middle;overflow-wrap:anywhere}
@@ -84,7 +84,7 @@ export default function PrintShiftsReport(){
     .paper{border:0;box-shadow:none;padding:0;margin:0}\n    .paper.sheet-page{break-before:page;page-break-before:always}
     .paper-head{padding-bottom:5px;margin-bottom:5px}
     .paper-head h2{font-size:13px}
-    .paper-head p,.paper-meta{font-size:8px}
+    .paper-head p{font-size:11px;font-weight:800}\n    .paper-meta{font-size:8px}
     .report-table{font-size:6.5px}
     .report-table th,.report-table td{padding:2px 1px;line-height:1.12}
     .report-table thead tr:first-child th{font-size:6px}
