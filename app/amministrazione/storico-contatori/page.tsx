@@ -12,7 +12,7 @@ type User={id:string;username:string;email:string;role:string;employment_role:st
 type Shift={user_id:string;short_name:string;duration_minutes:number};
 const SALMON="#f7c9c1",OCRA="#e7c56a",GREEN="#c8e6c9",YELLOW="#fff3b0",BLUE="#cfe8ff";
 const fmt=(n:number)=>n.toFixed(2).replace(".",",");
-const roleLabel=(r:string)=>r==="calabria"?"Calabria":r==="part_time"?"Part-time":"Strutturato";
+const roleLabel=(r:string)=>r==="calabria"?"Calabria":r==="part_time"?"Part-time":r==="gettonista"?"Gettonista":"Strutturato";
 
 export default function HistoricalCounters(){
  const [authorized,setAuthorized]=useState<boolean|null>(null),[users,setUsers]=useState<User[]>([]),[shifts,setShifts]=useState<Shift[]>([]),[error,setError]=useState("");
