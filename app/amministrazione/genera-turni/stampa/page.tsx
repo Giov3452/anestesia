@@ -62,10 +62,11 @@ export default function PrintShiftsReport(){
    .paper-head p{margin:0;color:#333;font-size:15px;font-weight:800;letter-spacing:.25px}
    .paper-meta{text-align:right;font-size:10px;color:#555;line-height:1.6}
    .report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:9px;color:#111}
-   .report-table.compact-report{width: min(100%, 190mm);margin-left:auto;margin-right:auto;table-layout:auto}
-   .report-table.oncall-report{width: min(100%, 145mm);margin-left:auto;margin-right:auto;table-layout:auto}
+   .report-table.compact-report{width:190mm;max-width:100%;margin-left:auto;margin-right:auto;table-layout:fixed}
+   .report-table.oncall-report{width:124mm;max-width:100%;margin-left:auto;margin-right:auto;table-layout:fixed}
    .report-table.compact-report .day-col,.report-table.oncall-report .day-col{width:15mm}
    .report-table.compact-report .date-col,.report-table.oncall-report .date-col{width:10mm}
+   .report-table.compact-report .shift-col,.report-table.oncall-report .shift-col,.report-table.compact-report td.shift-col,.report-table.oncall-report td.shift-col{width:33mm}
    .report-table th,.report-table td{border:1px solid #aeb5be;padding:3px 2px;text-align:center;vertical-align:middle;overflow-wrap:anywhere}
    .report-table thead th{background:#e9edf1;color:#111;font-weight:800}
    .report-table thead tr:first-child th{font-size:8px;text-transform:uppercase;letter-spacing:.15px;background:#dfe4e9}
@@ -108,7 +109,7 @@ export default function PrintShiftsReport(){
     {title:"TURNI REPERIBILITÀ",tableColumns:reperibilityColumns,tableGroups:reperibilityGroups,page:3},
   ].map((sheet,index)=><section className={`paper ${index>0?"sheet-page":""}`} key={sheet.title}>
     <div className="paper-head"><div><h2>Turni · {months[month]} {year}</h2><p>{sheet.title}</p></div><div className="paper-meta">TURNI OSPEDALIERI<br/>Report generato il {new Date().toLocaleDateString("it-IT")}<br/>{shifts.filter(s=>sheet.tableColumns.some(col=>col.short_name===s.short_name)).length} assegnazioni</div></div>
-    {loading?<p>Caricamento calendario…</p>:sheet.tableColumns.length===0?<p>Nessun turno assegnato per il mese selezionato.</p>:<table className={`report-table ${index===1?"compact-report":index===2?"oncall-report":""}`}><thead><tr><th className="day-col" rowSpan={2}>Giorno</th><th className="date-col" rowSpan={2}>Data</th>{sheet.tableGroups.map((g,i)=><th key={i} colSpan={g.span}>{g.name}</th>)}</tr><tr>{sheet.tableColumns.map(col=><th className="shift-col" key={col.id}>{col.short_name}</th>)}</tr></thead><tbody>{days.map(day=>{const date=iso(year,month,day),holiday=italianNationalHolidayName(date),isW=weekend(day);return <tr key={date} className={holiday?"holiday":isW?"weekend":""}><td className="day-col">{weekday(date).toLocaleUpperCase("it-IT")}</td><td className="date-col">{dateLabel(day)}</td>{sheet.tableColumns.map(col=>{const names=assignments[date]?.[col.short_name]||[];return <td key={col.id} className={names.length?"shift-name":"empty-cell"} title={names.join(", ")}>{names.length?names.join(" / "):"—"}</td>})}</tr>})}</tbody></table>}
+    {loading?<p>Caricamento calendario…</p>:sheet.tableColumns.length===0?<p>Nessun turno assegnato per il mese selezionato.</p>:<table className={`report-table ${index===1?"compact-report":index===2?"oncall-report":""}`}><thead><tr><th className="day-col" rowSpan={2}>Giorno</th><th className="date-col" rowSpan={2}>Data</th>{sheet.tableGroups.map((g,i)=><th key={i} colSpan={g.span}>{g.name}</th>)}</tr><tr>{sheet.tableColumns.map(col=><th className="shift-col" key={col.id}>{col.short_name}</th>)}</tr></thead><tbody>{days.map(day=>{const date=iso(year,month,day),holiday=italianNationalHolidayName(date),isW=weekend(day);return <tr key={date} className={holiday?"holiday":isW?"weekend":""}><td className="day-col">{weekday(date).toLocaleUpperCase("it-IT")}</td><td className="date-col">{dateLabel(day)}</td>{sheet.tableColumns.map(col=>{const names=assignments[date]?.[col.short_name]||[];return <td key={col.id} className={`${names.length?"shift-name":"empty-cell"} shift-col`} title={names.join(", ")}>{names.length?names.join(" / "):"—"}</td>})}</tr>})}</tbody></table>}
     {!loading&&<div className="report-foot"><span>Le celle vuote sono indicate con un trattino. I nominativi riportano il cognome in maiuscolo.</span><span>{months[month]} {year} · Pagina {sheet.page} di 3</span></div>}
   </section>)}
  </main>
