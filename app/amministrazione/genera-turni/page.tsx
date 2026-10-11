@@ -187,7 +187,7 @@ export default function GenerateShifts(){
       const reqFor=(uid:string,date:string)=>((req||[]) as any[]).find(r=>r.user_id===uid&&r.request_date===date);
       const enabled=(code:string)=>rules.some(r=>r.code===code&&r.enabled);
       const normalizedService=(u:User)=>String(u.service||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase();
-      const requiredServiceForShift=(code:string)=>["GRia","NRia","MRia","Emo"].includes(code)?"rianimazione":code==="E"?"any":"anestesia";
+      const requiredServiceForShift=(code:string)=>["GRia","NRia","MRia","RP"].includes(code)?"rianimazione":code==="E"?"any":"anestesia";
       const compiledRules:ParsedGeneratorRule[]=rules.filter(r=>r.enabled).map(r=>getParsedRule(r)).filter((r):r is ParsedGeneratorRule=>!!r);
       const usernameMatches=(ruleName:string|null,username:string)=>!!ruleName&&username.toLowerCase().replaceAll("_"," ").trim()===ruleName.toLowerCase().replaceAll("_"," ").trim();
       const textRule=(needle:string)=>rules.find(r=>r.enabled&&(`${r.name} ${r.description}`).toLowerCase().includes(needle.toLowerCase()));
