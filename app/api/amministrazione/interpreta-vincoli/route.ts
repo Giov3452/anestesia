@@ -11,7 +11,7 @@ const schema = {
   properties: {
     version: {type: "integer", enum: [1]},
     status: {type: "string", enum: ["supported", "needs_review"]},
-    kind: {type: "string", enum: ["require_shift_daily","require_shift_for_user","forbid_shift_for_user","forbid_shift_for_role","allowed_weekdays_for_role","max_shifts_per_user_day","rest_after_shift","fair_distribution","incentive_surplus","hide_shift","unknown"]},
+    kind: {type: "string", enum: ["require_shift_daily","require_shift_for_user","forbid_shift_for_user","forbid_shift_for_role","allowed_weekdays_for_role","max_shifts_per_user_day","rest_after_shift","fair_distribution","incentive_surplus","hide_shift","prefer_same_user_shift","unknown"]},
     shiftCodes: {type: "array", items: {type: "string"}},
     count: {type: ["integer","null"]},
     weekdays: {type: ["array","null"], items: {type: "integer", minimum: 0, maximum: 6}},
@@ -103,6 +103,10 @@ export async function POST(request: Request) {
       if (constraintName === "endoscopia") {
         // The existing generator historically schedules one E on Thursdays.
         Object.assign(safeRule, {status:"supported",kind:"require_shift_daily",shiftCodes:["E"],count:1,weekdays:[4],excludeHolidays:true,username:null,employmentRoles:[],allowedWeekdays:[4],maxPerUserDay:null,unsupportedReason:null,rationale:constraint.description});
+      }
+      if (constraintName === "rp" || (String(constraint.description).includes("RP") && String(constraint.description).includes("MRia"))) {
+        // Prefer pairing RP with the same user as MRia, but allow fallback assignment.
+        Object.assign(safeRule, {status:"supported",kind:"prefer_same_user_shift",shiftCodes:["RP","MRia"],count:null,weekdays:null,excludeHolidays:false,username:null,employmentRoles:[],allowedWeekdays:null,maxPerUserDay:null,afterShiftCodes:[],unsupportedReason:null,rationale:constraint.description});
       }
       const unsupported =
         (safeRule.kind === "require_shift_daily" && (!safeRule.shiftCodes.length || ((safeRule.count ?? 1) > 1 && safeRule.shiftCodes.length < (safeRule.count ?? 1)) || safeRule.username !== null || safeRule.employmentRoles.length > 0)) ||
