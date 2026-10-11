@@ -219,7 +219,7 @@ export default function GenerateShifts(){
       const currentHours=(uid:string)=>allAssignments().filter(a=>a.user_id===uid&&!["SN","RC","RG","RN","RP","R","Rp"].includes(a.short_name)).reduce((sum,a)=>sum+duration(a.short_name),0);
       const previousDay=(date:string)=>{const d=new Date(date+"T00:00:00");d.setDate(d.getDate()-1);return iso(d.getFullYear(),d.getMonth(),d.getDate());};
       const hadNight=(uid:string,date:string)=>allAssignments().some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name==="N")||((old||[]) as any[]).some(a=>a.user_id===uid&&a.short_name==="N");
-      const hardBlocked=(u:User,date:string,code:string)=>{
+      const hardBlocked=(u:User,date:string,code:string,allowMriaPair=false)=>{
         if(u.employment_role==="gettonista")return true;
         if(u.service!=="anestesia")return true;
         if(vacation(u.id,date)||requestBlocksCode(reqFor(u.id,date),code))return true;
@@ -243,7 +243,11 @@ export default function GenerateShifts(){
           if(rule.kind==="allowed_weekdays_for_role"&&roleMatch&&rule.allowedWeekdays&&!rule.allowedWeekdays.includes(dow))return true;
           if(rule.kind==="rest_after_shift"&&rule.afterShiftCodes.some(prevCode=>allAssignments().some(a=>a.user_id===u.id&&a.shift_date===previousDay(date)&&a.short_name===prevCode)))return true;
         }
-        if(hasAnyWork(u.id,date))return true;
+        if(hasAnyWork(u.id,date)){
+          const sameDayWork=allAssignments().filter(a=>a.user_id===u.id&&a.shift_date===date&&a.short_name!=="SN");
+          const isMriaPair=allowMriaPair&&code==="RP"&&sameDayWork.length===1&&sameDayWork[0].short_name==="MRia";
+          if(!isMriaPair)return true;
+        }
         if((weekend||holiday)&&["M1","M2","M3","Mo1","Mo2","MRia"].includes(code))return true;
         return false;
       };
@@ -305,6 +309,21 @@ export default function GenerateShifts(){
           if(["M1","M2","M3"].includes(code)&&!enabled("weekday_morning_rooms"))continue;
           const u=choose(date,code);
           if(u)add(u,date,code);else conflict(date,`Nessun candidato valido per ${code}`);
+        }
+        // RP prefers the person assigned to MRia on the same date, but pairing is soft.
+        const rpPairRule=compiledRules.some(rule=>rule.kind==="prefer_same_user_shift"&&rule.shiftCodes.includes("RP")&&rule.shiftCodes.includes("MRia"));
+        if(rpPairRule&&!allAssignments().some(a=>a.shift_date===date&&a.short_name==="RP")){
+          const mriaAssignment=allAssignments().find(a=>a.shift_date===date&&a.short_name==="MRia");
+          if(mriaAssignment){
+            const preferred=users.find(u=>u.id===mriaAssignment.user_id);
+            if(preferred&&!hardBlocked(preferred,date,"RP",true)){
+              add(preferred,date,"RP","Vincolo flessibile: RP abbinato a MRia");
+            }else{
+              const fallback=choose(date,"RP");
+              if(fallback)add(fallback,date,"RP","RP assegnato a un altro utente perché l'abbinamento con MRia non è possibile");
+              else conflict(date,"RP non assegnabile: nessun candidato disponibile, incluso l'utente di MRia");
+            }
+          }
         }
         if(restRule){for(const u of users.filter(x=>x.service==="anestesia")){if(hadNight(u.id,date)&&day<daysInMonth){const next=iso(y,m,day+1);if(!has(u.id,next,"SN")&&!vacation(u.id,next)){if(hasAnyWork(u.id,next))conflict(next,`${u.username}: smonto notte non inseribile perché il giorno successivo contiene già un turno`);else add(u,next,"SN","Smonto notte automatico");}}}}
       }
