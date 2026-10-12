@@ -119,3 +119,10 @@
 .request-dot.gettonista-dot{right:48px;background:#eab308;box-shadow:0 0 0 2px #eab30838,0 2px 7px #eab30850}
 .request-dot.static.gettonista-dot{position:static;display:inline-block;width:12px;height:12px;min-width:12px;border:0;margin-right:4px;vertical-align:-2px;box-shadow:none;cursor:default}
 .type-badge.disponibilita{background:#fef3c7;color:#92400e}
+
+/* Navigazione dei mesi nel calendario personale */
+.calendar-navigation{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.calendar-nav-button{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--navy);transition:background .15s,border-color .15s}
+.calendar-nav-button:hover{background:#f0f4fa;border-color:#cbd5e1}
+.calendar-nav-button:focus-visible{outline:3px solid #1d5fd130;outline-offset:2px}
+@media(max-width:800px){.calendar-navigation{gap:6px}.calendar-nav-button{width:32px;height:32px}.dashboard-calendar-card .calendar-head{align-items:flex-start}.dashboard-calendar-card .calendar-navigation{max-width:58%}}
