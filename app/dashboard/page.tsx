@@ -1,8 +1,9 @@
+import Link from "next/link";
 import UserMenu from "@/app/components/UserMenu";
 import PersonalCounters from "@/app/components/PersonalCounters";
 import {redirect} from "next/navigation";
 import {createClient} from "@/lib/supabase/server";
-import {CalendarDays} from "lucide-react";
+import {CalendarDays, ChevronLeft, ChevronRight} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -21,15 +22,28 @@ function dateKey(year:number,month:number,day:number){
   return `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
 }
 
-export default async function Dashboard(){
+function monthHref(year:number,month:number){
+  return `/dashboard?year=${year}&month=${month+1}`;
+}
+
+export default async function Dashboard({searchParams}:{searchParams:Promise<{year?:string;month?:string}>}){
+  const params=await searchParams;
   const s=await createClient();
   const {data:{user}}=await s.auth.getUser();
   if(!user) redirect("/login");
 
   const {data:p}=await s.from("profiles").select("username").eq("id",user.id).single();
   const now=new Date();
-  const year=now.getFullYear();
-  const month=now.getMonth()+1;
+  const requestedYear=Number(params.year);
+  const requestedMonth=Number(params.month);
+  const validYear=Number.isInteger(requestedYear)&&requestedYear>=2000&&requestedYear<=2100;
+  const validMonth=Number.isInteger(requestedMonth)&&requestedMonth>=1&&requestedMonth<=12;
+  const year=validYear?requestedYear:now.getFullYear();
+  const month=validMonth?requestedMonth:now.getMonth()+1;
+  const selectedDate=new Date(year,month-1,1);
+  const previousDate=new Date(year,month-2,1);
+  const nextDate=new Date(year,month,1);
+
   const {data:status}=await s.from("calendar_month_status").select("validated").eq("year",year).eq("month",month).maybeSingle();
   const validated=status?.validated===true;
   const monthStart=dateKey(year,month-1,1);
@@ -44,7 +58,7 @@ export default async function Dashboard(){
   const name=p?.username||user.user_metadata?.username||user.email?.split("@")[0]||"";
   const calendarMonth=month-1;
   const cells=buildCalendar(year,calendarMonth);
-  const monthName=new Intl.DateTimeFormat("it-IT",{month:"long",year:"numeric"}).format(now);
+  const monthName=new Intl.DateTimeFormat("it-IT",{month:"long",year:"numeric"}).format(selectedDate);
   const shiftsByDate=(shifts||[]).reduce<Record<string,string[]>>((acc,shift)=>{
     if(shift.short_name==="SN")return acc;
     const list=acc[shift.shift_date]??=[];
@@ -79,9 +93,17 @@ export default async function Dashboard(){
             <p className="eyebrow">Programmazione personale</p>
             <h2>{monthName.charAt(0).toUpperCase()+monthName.slice(1)}</h2>
           </div>
-          <span className={`calendar-count ${validated?"validated":"pending"}`}>
-            {validated ? `${shifts?.length||0} turni` : "Non convalidati"}
-          </span>
+          <div className="calendar-navigation">
+            <Link className="calendar-nav-button" href={monthHref(previousDate.getFullYear(),previousDate.getMonth())} aria-label="Mese precedente" title="Mese precedente">
+              <ChevronLeft size={19}/>
+            </Link>
+            <Link className="calendar-nav-button" href={monthHref(nextDate.getFullYear(),nextDate.getMonth())} aria-label="Mese successivo" title="Mese successivo">
+              <ChevronRight size={19}/>
+            </Link>
+            <span className={`calendar-count ${validated?"validated":"pending"}`}>
+              {validated ? `${shifts?.length||0} turni` : "Non convalidati"}
+            </span>
+          </div>
         </div>
 
         {!validated ? (
