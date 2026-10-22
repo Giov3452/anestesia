@@ -2,6 +2,22 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // Public pages and auth callbacks must never wait on Supabase. In particular,
+  // /login needs to render even if the Auth service is slow or unavailable.
+  const isPublic =
+    path === "/login" ||
+    path.startsWith("/login/") ||
+    path === "/forgot-password" ||
+    path.startsWith("/forgot-password/") ||
+    path === "/auth" ||
+    path.startsWith("/auth/");
+
+  if (isPublic) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({ request });
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -30,46 +46,33 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Validate the session from its JWT claims instead of fetching the full user
-  // from the Auth server on every request. This removes an unnecessary network
-  // round trip from the middleware hot path.
+  // Verify the JWT claims without fetching the full user record.
   const {
     data: { claims },
     error: claimsError,
   } = await supabase.auth.getClaims();
   const userId = claimsError ? null : claims?.sub;
 
-  const path = request.nextUrl.pathname;
-  const isPublic =
-    path.startsWith("/login") ||
-    path.startsWith("/forgot-password") ||
-    path.startsWith("/auth");
-
-  if (!userId && !isPublic) {
+  if (!userId) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (userId) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("must_change_password")
-      .eq("id", userId)
-      .maybeSingle();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("must_change_password")
+    .eq("id", userId)
+    .maybeSingle();
 
-    const isPasswordPage = path === "/change-password";
-    if (
-      profile?.must_change_password &&
-      !isPasswordPage &&
-      !path.startsWith("/auth/signout")
-    ) {
-      return NextResponse.redirect(new URL("/change-password", request.url));
-    }
-    if (!profile?.must_change_password && isPasswordPage) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-    if (path === "/login") {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
+  const isPasswordPage = path === "/change-password";
+  if (
+    profile?.must_change_password &&
+    !isPasswordPage &&
+    !path.startsWith("/auth/signout")
+  ) {
+    return NextResponse.redirect(new URL("/change-password", request.url));
+  }
+  if (!profile?.must_change_password && isPasswordPage) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return response;
