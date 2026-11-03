@@ -5,7 +5,8 @@ export async function middleware(request: NextRequest) {
  const isPtArea=path==="/personal-trainer"||path.startsWith("/personal-trainer/");
  if(isPtArea){
   const isPtLogin=path==="/personal-trainer/login"||path.startsWith("/personal-trainer/login/");
-  if(isPtLogin)return NextResponse.next();
+  const isPtAuthCallback=path==="/personal-trainer/auth/callback";
+  if(isPtLogin||isPtAuthCallback)return NextResponse.next();
   let response=NextResponse.next({request});
   const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if(!process.env.NEXT_PUBLIC_SUPABASE_URL||!key)return new NextResponse("Supabase environment not configured",{status:500});
