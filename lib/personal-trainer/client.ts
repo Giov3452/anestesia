@@ -1,10 +1,18 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-export function createPersonalTrainerClient() {
-  // Keep a distinct browser client and cookie jar from the Turni application.
+const SIXTY_DAYS = 60 * 24 * 60 * 60;
+
+export function createPersonalTrainerClient(rememberDays?: number) {
+  // Dedicated cookie jar for Personal Trainer Hub, separate from Turni.
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { cookieOptions: { name: "pt-auth-token" }, isSingleton: false }
+    {
+      cookieOptions: {
+        name: "pt-auth-token",
+        ...(rememberDays ? { maxAge: rememberDays * 24 * 60 * 60 } : {}),
+      },
+      isSingleton: false,
+    }
   );
 }
