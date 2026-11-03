@@ -4,7 +4,7 @@ import {useRouter} from "next/navigation";
 import {createPersonalTrainerClient} from "@/lib/personal-trainer/client";
 
 type Package={id:string;title:string;total_lessons:number;price_eur:number;starts_on:string|null;expires_on:string|null;created_at:string;payment_method:string|null;status:string;admin_approved_by:string|null;admin_approved_at:string|null;pt_approved_by:string|null;pt_approved_at:string|null;is_active:boolean};
-const methods:Record<string,string>={bank_transfer:"Bonifico",cash:"Contanti",card:"Carta",other:"Altro"};
+// The package is activated only after one approval from each role.\nconst methods:Record<string,string>={bank_transfer:"Bonifico",cash:"Contanti",card:"Carta",other:"Altro"};
 export default function PaymentsClient({initialPackages,viewerId,viewerRole}:{initialPackages:Package[];viewerId:string;viewerRole:string}){
  const router=useRouter();
  const [packages,setPackages]=useState(initialPackages);
