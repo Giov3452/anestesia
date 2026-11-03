@@ -154,3 +154,14 @@
   .pt-links a{font-size:12px;text-align:center;padding:11px 8px;overflow-wrap:anywhere}
   .pt-eyebrow{font-size:10px;letter-spacing:.12em}
 }
+
+/* Logout sempre disponibile in fondo alla sidebar */
+.pt-sidebar-foot form button{display:inline-flex;align-items:center;gap:8px;font:inherit;font-weight:700}
+@media(max-width:850px){
+ .pt-sidebar{display:flex;flex-direction:column}
+ .pt-nav{flex:1;align-content:start}
+ .pt-sidebar-foot{display:block;margin-top:auto;padding:12px 0 4px;text-align:center}
+ .pt-sidebar-foot>div{display:none}
+ .pt-sidebar-foot form button{width:100%;min-height:48px;justify-content:center;border-radius:12px!important;background:#2b5844!important;color:#fff!important}
+ .pt-logout-label{display:none}
+}
