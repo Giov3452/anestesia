@@ -25,14 +25,14 @@ export default async function PersonalTrainerDashboardPage() {
       <p className="pt-eyebrow" style={{ margin: 0 }}>PANORAMICA</p>
       <h2>Ciao, {profile.display_name || "bentornato"}.</h2>
       <p className="pt-muted">Il tuo spazio condiviso con il personal trainer: qui trovi un riepilogo aggiornato di lezioni e rilevazioni.</p>
-      <div className="pt-grid">
-        <article className="pt-card"><small>Prossima lezione</small><strong>{lessonDate?fmtDate(lessonDate):"—"}</strong><span className="pt-muted">{lessonDate?fmtTime(lessonDate)+(nextLesson?.notes?" · "+nextLesson.notes:""):"Nessuna lezione programmata"}</span><Link href="/personal-trainer/lezioni">Apri calendario →</Link></article>
-        <article className="pt-card"><small>Lezioni completate</small><strong>{completedResult.count??0}</strong><span className="pt-muted">Sessioni svolte con il tuo PT</span><Link href="/personal-trainer/lezioni">Vedi lezioni →</Link></article>
-        <article className="pt-card"><small>Ultima rilevazione</small><strong>{measurementDate?fmtDate(measurementDate):"—"}</strong><span className="pt-muted">{lastMeasurement?[
+      <div className="pt-grid pt-dashboard-grid">
+        <article className="pt-card"><small>Prossima lezione</small><strong>{lessonDate?fmtDate(lessonDate):"—"}</strong><p className="pt-muted pt-dashboard-detail">{lessonDate?<><span>{fmtTime(lessonDate)}</span>{nextLesson?.notes&&<span className="pt-dashboard-note">{nextLesson.notes}</span>}</>:"Nessuna lezione programmata"}</p><Link href="/personal-trainer/lezioni">Apri calendario →</Link></article>
+        <article className="pt-card"><small>Lezioni completate</small><strong>{completedResult.count??0}</strong><p className="pt-muted pt-dashboard-detail">Sessioni svolte con il tuo PT</p><Link href="/personal-trainer/lezioni">Vedi lezioni →</Link></article>
+        <article className="pt-card"><small>Ultima rilevazione</small><strong>{measurementDate?fmtDate(measurementDate):"—"}</strong><p className="pt-muted pt-dashboard-detail">{lastMeasurement?[
           lastMeasurement.weight_kg!=null?lastMeasurement.weight_kg+" kg":null,
           lastMeasurement.bmi!=null?"BMI "+lastMeasurement.bmi:null,
           lastMeasurement.fat_mass_percent!=null?lastMeasurement.fat_mass_percent+"% massa grassa":null
-        ].filter(Boolean).join(" · ")||"Rilevazione registrata":"Misurazioni non ancora inserite"}</span><Link href="/personal-trainer/misurazioni">Apri misurazioni →</Link></article>
+         ].filter(Boolean).join(" · ")||"Rilevazione registrata":"Misurazioni non ancora inserite"}</p><Link href="/personal-trainer/misurazioni">Apri misurazioni →</Link></article>
       </div>
       <section className="pt-section">
         <h3>Accesso rapido</h3>
