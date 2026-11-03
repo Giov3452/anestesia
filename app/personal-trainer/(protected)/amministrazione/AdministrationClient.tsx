@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPersonalTrainerClient } from "@/lib/personal-trainer/client";
 
-type Trainer = { id: string; email: string; display_name: string; role: string; created_at: string; relationship_status: "active" | "disabled" };
+type Trainer = { id: string; email: string; display_name: string; role: string; height_cm: number | null; created_at: string; relationship_status: "active" | "disabled" };
 
 export default function AdministrationClient({ trainers }: { trainers: Trainer[] }) {
   const router = useRouter();
@@ -13,6 +13,10 @@ export default function AdministrationClient({ trainers }: { trainers: Trainer[]
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editHeight, setEditHeight] = useState("");
 
   async function invoke(body: Record<string, unknown>) {
     const supabase = createPersonalTrainerClient();
@@ -44,6 +48,34 @@ export default function AdministrationClient({ trainers }: { trainers: Trainer[]
     finally { setBusy(false); }
   }
 
+  function startEdit(t: Trainer) {
+    setEditingId(t.id); setEditName(t.display_name ?? ""); setEditEmail(t.email ?? "");
+    setEditHeight(t.height_cm == null ? "" : String(t.height_cm));
+    setError(""); setMessage("");
+  }
+
+  async function saveEdit(event: React.FormEvent<HTMLFormElement>, trainerId: string) {
+    event.preventDefault(); setBusy(true); setError(""); setMessage("");
+    try {
+      await invoke({ action: "update", trainer_id: trainerId, display_name: editName, email: editEmail, height_cm: editHeight });
+      setMessage("Account PT aggiornato.");
+      setEditingId(null); router.refresh();
+    } catch (e) { setError(e instanceof Error ? e.message : "Errore durante la modifica."); }
+    finally { setBusy(false); }
+  }
+
+  async function deleteTrainer(t: Trainer) {
+    const confirmed = window.confirm(`Eliminare definitivamente l'account di ${t.display_name} ( ${t.email} )? I dati storici resteranno nello spazio e saranno attribuiti all'amministratore. L'operazione non è reversibile.`);
+    if (!confirmed) return;
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const result = await invoke({ action: "delete", trainer_id: t.id });
+      setMessage(result.message ?? "Account PT eliminato.");
+      router.refresh();
+    } catch (e) { setError(e instanceof Error ? e.message : "Errore durante l'eliminazione."); }
+    finally { setBusy(false); }
+  }
+
   return <div className="pt-page">
     <p className="pt-eyebrow">AREA ADMIN</p>
     <h2>Amministrazione</h2>
@@ -58,13 +90,24 @@ export default function AdministrationClient({ trainers }: { trainers: Trainer[]
         </div>
         <button className="pt-button" disabled={busy}>{busy ? "Attendi…" : "Invia invito"}</button>
       </form>
-      {message && <p className="pt-success" role="status">{message}</p>}
-      {error && <p className="pt-error" role="alert">{error}</p>}
     </section>
+    {message && <p className="pt-success" role="status">{message}</p>}
+    {error && <p className="pt-error" role="alert">{error}</p>}
     <section className="pt-section">
       <h3>Personal trainer associati ({trainers.length})</h3>
-      {trainers.length === 0 ? <div className="pt-empty">Non hai ancora invitato personal trainer.</div> : <div className="pt-table-wrap"><table className="pt-table"><thead><tr><th>Nome</th><th>Email</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>
-        {trainers.map(t => <tr key={t.id}><td>{t.display_name}</td><td>{t.email}</td><td><span className={t.relationship_status === "active" ? "pt-status-active" : "pt-status-disabled"}>{t.relationship_status === "active" ? "Attivo" : "Sospeso"}</span></td><td><button className="pt-secondary-button" disabled={busy} onClick={() => toggleTrainer(t)}>{t.relationship_status === "active" ? "Sospendi" : "Riattiva"}</button></td></tr>)}
+      {trainers.length === 0 ? <div className="pt-empty">Non hai ancora invitato personal trainer.</div> : <div className="pt-table-wrap"><table className="pt-table"><thead><tr><th>Nome / Email</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>
+        {trainers.map(t => <tr key={t.id}><td>
+          {editingId === t.id ? <form onSubmit={e => saveEdit(e, t.id)} className="pt-form-grid">
+            <div className="pt-field"><label>Nome e cognome</label><input value={editName} onChange={e => setEditName(e.target.value)} required minLength={2} maxLength={100} /></div>
+            <div className="pt-field"><label>Email</label><input type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} required /></div>
+            <div className="pt-field"><label>Altezza (cm)</label><input type="number" min="50" max="250" step="0.1" value={editHeight} onChange={e => setEditHeight(e.target.value)} placeholder="Non specificata" /></div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}><button className="pt-button" disabled={busy}>Salva</button><button type="button" className="pt-secondary-button" disabled={busy} onClick={() => setEditingId(null)}>Annulla</button></div>
+          </form> : <><strong>{t.display_name}</strong><div className="pt-muted">{t.email}</div>{t.height_cm ? <small className="pt-muted">{t.height_cm} cm</small> : null}</>}
+        </td><td><span className={t.relationship_status === "active" ? "pt-status-active" : "pt-status-disabled"}>{t.relationship_status === "active" ? "Attivo" : "Sospeso"}</span></td><td><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <button className="pt-secondary-button" disabled={busy} onClick={() => toggleTrainer(t)}>{t.relationship_status === "active" ? "Sospendi" : "Riattiva"}</button>
+          <button className="pt-secondary-button" disabled={busy} onClick={() => editingId === t.id ? setEditingId(null) : startEdit(t)}>Modifica</button>
+          <button className="pt-secondary-button" style={{color:"#a12d2d",borderColor:"#d9aaaa"}} disabled={busy} onClick={() => deleteTrainer(t)}>Elimina</button>
+        </div></td></tr>)}
       </tbody></table></div>}
     </section>
   </div>;
