@@ -8,7 +8,7 @@ export default function PersonalTrainerLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);\n  const [remember, setRemember] = useState(true);
 
   useEffect(() => {
     const reason = new URLSearchParams(window.location.search).get("reason");
@@ -20,7 +20,7 @@ export default function PersonalTrainerLoginPage() {
     event.preventDefault();
     setLoading(true);
     setError("");
-    const supabase = createPersonalTrainerClient();
+    const supabase = createPersonalTrainerClient(remember ? 60 : undefined);
 
     const { data, error: signInError } = await supabase.auth.signInWithPassword({
       email: email.trim(),
@@ -85,7 +85,7 @@ export default function PersonalTrainerLoginPage() {
             <label htmlFor="pt-password">Password</label>
             <input id="pt-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
           </div>
-          <button className="pt-button" style={{ width: "100%", marginTop: 8 }} disabled={loading}>
+          <label className="pt-remember-row" style={{ display: "flex", alignItems: "center", gap: 9, margin: "14px 0 4px", fontSize: 13, color: "#52615a" }}>\n            <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />\n            Mantieni la sessione attiva per 60 giorni\n          </label>\n          <button className="pt-button" style={{ width: "100%", marginTop: 8 }} disabled={loading}>
             {loading ? "Accesso in corso…" : "Accedi"}
           </button>
         </form>
