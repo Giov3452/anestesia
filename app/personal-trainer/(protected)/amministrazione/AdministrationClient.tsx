@@ -12,6 +12,7 @@ export default function AdministrationClient({ trainers }: { trainers: Trainer[]
   const [displayName, setDisplayName] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [temporaryPassword, setTemporaryPassword] = useState("");
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -30,8 +31,9 @@ export default function AdministrationClient({ trainers }: { trainers: Trainer[]
     event.preventDefault();
     setBusy(true); setError(""); setMessage("");
     try {
-      const result = await invoke({ action: "create", email, display_name: displayName });
-      setMessage(result.message ?? "Invito inviato.");
+      const result = await invoke({ action: "create_temporary", email, display_name: displayName });
+      setTemporaryPassword(result.temporary_password ?? "");
+      setMessage(result.message ?? "Account PT creato.");
       setEmail(""); setDisplayName("");
       router.refresh();
     } catch (e) { setError(e instanceof Error ? e.message : "Errore durante la creazione."); }
@@ -81,17 +83,18 @@ export default function AdministrationClient({ trainers }: { trainers: Trainer[]
     <h2>Amministrazione</h2>
     <p className="pt-muted">Gestisci gli accessi dei personal trainer collegati al tuo spazio.</p>
     <section className="pt-card pt-section">
-      <h3>Invita un personal trainer</h3>
-      <p className="pt-muted">Il PT riceverà un'email con un link per accedere e scegliere la propria password.</p>
+      <h3>Crea account personal trainer</h3>
+      <p className="pt-muted">Crea un account PT senza invio email. La password temporanea verrà mostrata una sola volta e dovrà essere cambiata al primo accesso.</p>
       <form onSubmit={createTrainer}>
         <div className="pt-form-grid">
           <div className="pt-field"><label htmlFor="pt-name">Nome e cognome</label><input id="pt-name" value={displayName} onChange={e => setDisplayName(e.target.value)} required minLength={2} maxLength={100} /></div>
           <div className="pt-field"><label htmlFor="pt-new-email">Email</label><input id="pt-new-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
         </div>
-        <button className="pt-button" disabled={busy}>{busy ? "Attendi…" : "Invia invito"}</button>
+        <button className="pt-button" disabled={busy}>{busy ? "Attendi…" : "Crea account PT"}</button>
       </form>
     </section>
     {message && <p className="pt-success" role="status">{message}</p>}
+    {temporaryPassword && <div className="pt-card pt-section"><strong>Password temporanea — copiala ora</strong><p className="pt-muted">Comunicala a Federico tramite un canale sicuro. Non verrà inviata via email né mostrata di nuovo.</p><code style={{display:"block",padding:12,wordBreak:"break-all"}}>{temporaryPassword}</code><button type="button" className="pt-secondary-button" onClick={() => navigator.clipboard.writeText(temporaryPassword)}>Copia password</button></div>}
     {error && <p className="pt-error" role="alert">{error}</p>}
     <section className="pt-section">
       <h3>Personal trainer associati ({trainers.length})</h3>
