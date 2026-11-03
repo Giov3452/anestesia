@@ -10,7 +10,6 @@ export default function AdministrationClient({ trainers }: { trainers: Trainer[]
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [height, setHeight] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -27,9 +26,9 @@ export default function AdministrationClient({ trainers }: { trainers: Trainer[]
     event.preventDefault();
     setBusy(true); setError(""); setMessage("");
     try {
-      const result = await invoke({ action: "create", email, display_name: displayName, height_cm: height || null });
+      const result = await invoke({ action: "create", email, display_name: displayName });
       setMessage(result.message ?? "Invito inviato.");
-      setEmail(""); setDisplayName(""); setHeight("");
+      setEmail(""); setDisplayName("");
       router.refresh();
     } catch (e) { setError(e instanceof Error ? e.message : "Errore durante la creazione."); }
     finally { setBusy(false); }
@@ -56,7 +55,6 @@ export default function AdministrationClient({ trainers }: { trainers: Trainer[]
         <div className="pt-form-grid">
           <div className="pt-field"><label htmlFor="pt-name">Nome e cognome</label><input id="pt-name" value={displayName} onChange={e => setDisplayName(e.target.value)} required minLength={2} maxLength={100} /></div>
           <div className="pt-field"><label htmlFor="pt-new-email">Email</label><input id="pt-new-email" type="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
-          <div className="pt-field"><label htmlFor="pt-height">Altezza (cm, facoltativa)</label><input id="pt-height" type="number" min="50" max="250" step="0.5" value={height} onChange={e => setHeight(e.target.value)} /></div>
         </div>
         <button className="pt-button" disabled={busy}>{busy ? "Attendi…" : "Invia invito"}</button>
       </form>
