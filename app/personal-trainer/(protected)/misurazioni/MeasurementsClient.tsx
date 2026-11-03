@@ -20,7 +20,8 @@ export default function MeasurementsClient({ initial, defaultHeight }: { initial
   const router=useRouter(); const [busy,setBusy]=useState(false); const [error,setError]=useState("");
   const [date,setDate]=useState(new Date().toISOString().slice(0,10)); const [weight,setWeight]=useState("");
   const [height,setHeight]=useState(defaultHeight?.toString() ?? ""); const [values,setValues]=useState<Record<string,string>>({}); const [notes,setNotes]=useState("");
-  const bmi = weight && height && Number(weight)>0 && Number(height)>0 ? Number((Number(weight) / Math.pow(Number(height)/100, 2)).toFixed(2)) : null;\n  async function save(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError("");
+  const bmi = weight && height && Number(weight)>0 && Number(height)>0 ? Number((Number(weight) / Math.pow(Number(height)/100, 2)).toFixed(2)) : null;
+  async function save(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError("");
     const supabase=createPersonalTrainerClient();
     const payload:Record<string,unknown>={measured_on:date,weight_kg:weight?Number(weight):null,height_cm_used:height?Number(height):null,notes:notes||null};
     for(const [key] of fields) payload[key]=values[key]?Number(values[key]):null;
@@ -38,6 +39,7 @@ export default function MeasurementsClient({ initial, defaultHeight }: { initial
         <div className="pt-field"><label>Peso (kg)</label><input type="number" step="0.1" min="1" max="500" value={weight} onChange={e=>setWeight(e.target.value)} /></div>
         <div className="pt-field"><label>Altezza (cm)</label><input type="number" step="0.1" min="50" max="250" value={height} onChange={e=>setHeight(e.target.value)} /></div>
       </div>
+      {bmi !== null && <div className="pt-card pt-bmi"><span className="pt-muted">BMI calcolato in tempo reale</span><strong>{bmi}</strong></div>}
       <h3>Composizione corporea e pliche</h3><div className="pt-form-grid">
         {fields.slice(0,6).map(([key,label])=><div className="pt-field" key={key}><label>{label}</label><input type="number" step="0.1" min="0" value={values[key]??""} onChange={e=>setValues(v=>({...v,[key]:e.target.value}))}/></div>)}
       </div>
