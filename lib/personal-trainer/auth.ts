@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createPersonalTrainerServerClient } from "@/lib/personal-trainer/server";
 
 export type PersonalTrainerRole = "admin" | "pt";
-export type PersonalTrainerProfile = { id:string; email:string; display_name:string; role:PersonalTrainerRole; height_cm:number|null };
+export type PersonalTrainerProfile = { id:string; email:string; display_name:string; role:PersonalTrainerRole; height_cm:number|null; must_change_password?:boolean };
 
 export async function requirePersonalTrainerProfile(requiredRole?:PersonalTrainerRole) {
  const supabase=await createPersonalTrainerServerClient();
@@ -16,5 +16,7 @@ export async function requirePersonalTrainerProfile(requiredRole?:PersonalTraine
   if(!relationship)redirect("/personal-trainer/login?reason=not-linked");
  }
  if(requiredRole&&profile.role!==requiredRole)redirect("/personal-trainer/dashboard");
- return profile as PersonalTrainerProfile;
+ const { data: authUser } = await supabase.auth.getUser();
+ if (authUser.user?.user_metadata?.must_change_password === true) redirect("/personal-trainer/set-password");
+ return { ...profile, must_change_password: false } as PersonalTrainerProfile;
 }
