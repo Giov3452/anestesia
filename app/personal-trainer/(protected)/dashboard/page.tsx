@@ -7,10 +7,10 @@ export default async function PersonalTrainerDashboardPage() {
     <div className="pt-page">
       <p className="pt-eyebrow" style={{ margin: 0 }}>PANORAMICA</p>
       <h2>Ciao, {profile.display_name || "bentornato"}.</h2>
-      <p className="pt-muted">Qui troverai il riepilogo delle lezioni, dei pagamenti e dei tuoi progressi.</p>
+      <p className="pt-muted">Il tuo spazio condiviso con il personal trainer: tu controlli l’account, lui aggiorna programmi e indicazioni.</p>
       <div className="pt-grid">
         <article className="pt-card"><small>Prossima lezione</small><strong>—</strong><span className="pt-muted">Nessuna lezione programmata</span></article>
-        <article className="pt-card"><small>Lezioni completate</small><strong>0</strong><span className="pt-muted">Lo storico apparirà qui</span></article>
+        <article className="pt-card"><small>Lezioni completate</small><strong>0</strong><span className="pt-muted">Sessioni svolte con il tuo PT</span></article>
         <article className="pt-card"><small>Ultima rilevazione</small><strong>—</strong><span className="pt-muted">Misurazioni non ancora inserite</span></article>
       </div>
       <section className="pt-section">
@@ -22,7 +22,7 @@ export default async function PersonalTrainerDashboardPage() {
           <Link href="/personal-trainer/progressi">Fotografie progressi</Link>
         </div>
       </section>
-      <section className="pt-section"><div className="pt-empty"><strong style={{ color: "#294a3a" }}>Il tuo spazio è pronto.</strong><p style={{ marginBottom: 0 }}>Le funzionalità verranno attivate progressivamente: prima la gestione degli utenti e poi lezioni, pagamenti, documenti e monitoraggio antropometrico.</p></div></section>
+      <section className="pt-section"><div className="pt-empty"><strong style={{ color: "#294a3a" }}>Il tuo spazio è pronto.</strong><p style={{ marginBottom: 0 }}>Da qui potrai consultare le schede preparate dal PT, registrare i tuoi allenamenti e seguire nel tempo misurazioni e progressi. Invita il tuo personal trainer dall’area Amministrazione per abilitarne l’accesso.</p></div></section>
     </div>
   );
 }
