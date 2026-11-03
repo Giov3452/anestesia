@@ -1,6 +1,18 @@
-import { SectionPage } from "@/app/personal-trainer/components/SectionPage";
 import { requirePersonalTrainerProfile } from "@/lib/personal-trainer/auth";
+import { createPersonalTrainerServerClient } from "@/lib/personal-trainer/server";
+import AdministrationClient from "./AdministrationClient";
+
 export default async function AdministrationPage() {
-  await requirePersonalTrainerProfile("admin");
-  return <SectionPage eyebrow="AREA ADMIN" title="Amministrazione" description="Gestione degli accessi e configurazione di Personal Trainer Hub." emptyTitle="Account amministratore attivato" emptyDescription="Il tuo profilo è stato registrato con ruolo ADMIN. Nel prossimo passaggio aggiungeremo la creazione e abilitazione dell'account PT e la gestione della relazione tra i due profili." />;
+  const admin = await requirePersonalTrainerProfile("admin");
+  const supabase = await createPersonalTrainerServerClient();
+  const [{ data: profiles }, { data: relationships }] = await Promise.all([
+    supabase.from("pt_profiles").select("id,email,display_name,role,created_at").eq("role","pt").order("created_at",{ascending:false}),
+    supabase.from("pt_relationships").select("trainer_id,status").eq("admin_id",admin.id),
+  ]);
+  const statusByTrainer = new Map((relationships ?? []).map((r) => [r.trainer_id, r.status]));
+  const trainers = (profiles ?? []).filter((p) => statusByTrainer.has(p.id)).map((p) => ({
+    ...p,
+    relationship_status: statusByTrainer.get(p.id) as "active" | "disabled",
+  }));
+  return <AdministrationClient trainers={trainers} />;
 }
