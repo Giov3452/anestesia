@@ -4,6 +4,7 @@ import { requirePersonalTrainerProfile } from "@/lib/personal-trainer/auth";
 
 export default async function PersonalTrainerProtectedLayout({ children }: { children: React.ReactNode }) {
   const profile = await requirePersonalTrainerProfile();
+  if (profile.must_change_password) { const { redirect } = await import("next/navigation"); redirect("/personal-trainer/set-password"); }
   const links = [
     { href: "/personal-trainer/dashboard", label: "Dashboard", icon: Activity },
     { href: "/personal-trainer/lezioni", label: "Calendario", icon: CalendarDays },
