@@ -29,7 +29,7 @@ export default async function PersonalTrainerProtectedLayout({ children }: { chi
             <div style={{ fontWeight: 700, color: "#fff" }}>{profile.display_name || profile.email}</div>
             <div style={{ margin: "5px 0 14px" }}>{profile.role === "admin" ? "Cliente · Amministratore" : "Personal trainer"}</div>
             <form action="/personal-trainer/logout" method="post">
-              <button type="submit" style={{ border: 0, background: "transparent", color: "#d9e9df", padding: 0, cursor: "pointer" }}><LogOut size={14} style={{ verticalAlign: "middle", marginRight: 7 }} />Esci</button>
+              <button type="submit" style={{ border: 0, background: "transparent", color: "#d9e9df", padding: 0, cursor: "pointer" }}><LogOut size={16} style={{ verticalAlign: "middle" }} /><span className="pt-logout-label">Esci</span></button>
             </form>
           </div>
         </aside>
