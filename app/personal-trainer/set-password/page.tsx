@@ -17,7 +17,7 @@ export default function SetPersonalTrainerPasswordPage() {
     if (password !== confirm) { setError("Le password non coincidono."); return; }
     setBusy(true);
     const supabase = createPersonalTrainerClient();
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const { error: updateError } = await supabase.auth.updateUser({ password, data: { must_change_password: false } });
     if (updateError) { setError(updateError.message); setBusy(false); return; }
     router.replace("/personal-trainer/dashboard");
     router.refresh();
