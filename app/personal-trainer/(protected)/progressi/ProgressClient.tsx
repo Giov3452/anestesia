@@ -14,7 +14,7 @@ export default function ProgressClient({initial}:{initial:Photo[]}) {
  const {data,error:dbErr}=await sb.from("pt_progress_photos").insert({taken_on:date,view_type:view,file_path:path,caption:caption.trim()||null,uploaded_by:user.id}).select("id,taken_on,view_type,caption,file_path").single();
  if(dbErr){await sb.storage.from("pt-private").remove([path]);setError("Impossibile salvare la foto: "+dbErr.message);setBusy(false);return}
  const {data:signed}=await sb.storage.from("pt-private").createSignedUrl(path,3600);
- setPhotos(p=>[{...db,url:signed?.signedUrl||""},...p]);setCaption("");setMessage("Foto caricata nell'archivio privato.");setBusy(false);
+ setPhotos(p=>[{...data,url:signed?.signedUrl||""},...p]);setCaption("");setMessage("Foto caricata nell'archivio privato.");setBusy(false);
  }
  return <div className="pt-page">
  <p className="pt-eyebrow">DIARIO VISIVO</p><h2>Fotografie dei progressi</h2><p className="pt-muted">Archivio privato condiviso con il tuo personal trainer. Puoi scegliere una foto dalla galleria oppure scattarla direttamente con la fotocamera posteriore dello smartphone.</p>
