@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Activity, CalendarDays, CreditCard, Dumbbell, Ruler, Camera, NotebookPen, Settings, LogOut } from "lucide-react";
+import { Activity, CalendarDays, CreditCard, Dumbbell, Ruler, Camera, NotebookPen, Settings, LogOut, Users } from "lucide-react";
 import { requirePersonalTrainerProfile } from "@/lib/personal-trainer/auth";
 
 export default async function PersonalTrainerProtectedLayout({ children }: { children: React.ReactNode }) {
   const profile = await requirePersonalTrainerProfile();
   const links = [
     { href: "/personal-trainer/dashboard", label: "Dashboard", icon: Activity },
+    { href: "/personal-trainer/clienti", label: "Clienti", icon: Users },
     { href: "/personal-trainer/lezioni", label: "Lezioni", icon: CalendarDays },
     { href: "/personal-trainer/pagamenti", label: "Pagamenti", icon: CreditCard },
     { href: "/personal-trainer/allenamenti", label: "Allenamenti", icon: Dumbbell },
