@@ -1,0 +1,2 @@
+import { SectionPage } from "@/app/personal-trainer/components/SectionPage";
+export default function Page() { return <SectionPage eyebrow="MONITORAGGIO" title="Misurazioni corporee" description="Storico antropometrico con BMI calcolato automaticamente." emptyTitle="Nessuna rilevazione disponibile" emptyDescription="La scheda includerà peso, altezza, BMI, massa grassa %, cinque pliche in mm e sette circonferenze in cm." />; }

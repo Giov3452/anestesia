@@ -1,0 +1,2 @@
+import { SectionPage } from "@/app/personal-trainer/components/SectionPage";
+export default function Page() { return <SectionPage eyebrow="ANNOTAZIONI" title="Note" description="Osservazioni condivise e note collegate alle singole lezioni." emptyTitle="Nessuna nota disponibile" emptyDescription="Le note del trainer saranno consultabili qui. La comunicazione quotidiana continuerà su WhatsApp." />; }

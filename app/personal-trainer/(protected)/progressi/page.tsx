@@ -1,0 +1,2 @@
+import { SectionPage } from "@/app/personal-trainer/components/SectionPage";
+export default function Page() { return <SectionPage eyebrow="DIARIO VISIVO" title="Fotografie dei progressi" description="Archivio privato organizzato per data e tipologia di scatto." emptyTitle="Nessuna fotografia caricata" emptyDescription="Potrai archiviare foto frontali, laterali e posteriori e confrontare due date." />; }

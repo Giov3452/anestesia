@@ -1,0 +1,2 @@
+import { SectionPage } from "@/app/personal-trainer/components/SectionPage";
+export default function Page() { return <SectionPage eyebrow="LIBRERIA DOCUMENTI" title="Piani di allenamento" description="Programmi caricati dal personal trainer, consultabili e scaricabili." emptyTitle="Archivio vuoto" emptyDescription="I PDF saranno conservati in uno spazio privato e potranno essere aperti nell'app o scaricati." />; }

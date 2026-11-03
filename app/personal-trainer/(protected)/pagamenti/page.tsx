@@ -1,0 +1,2 @@
+import { SectionPage } from "@/app/personal-trainer/components/SectionPage";
+export default function Page() { return <SectionPage eyebrow="REGISTRO ECONOMICO" title="Pagamenti" description="Movimenti condivisi con conferma da parte dell'altra persona." emptyTitle="Nessun pagamento registrato" emptyDescription="Ogni pagamento sarà registrato come in attesa e dovrà essere confermato dall'altra persona." />; }
