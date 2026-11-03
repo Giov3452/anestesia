@@ -7,15 +7,20 @@ export default async function PersonalTrainerDashboardPage() {
   const supabase = await createPersonalTrainerServerClient();
   const now = new Date().toISOString();
 
-  const [nextResult, completedResult, measurementResult] = await Promise.all([
+  const [nextResult, completedResult, measurementResult, packagesResult, packageLessonsResult] = await Promise.all([
     supabase.from("pt_lessons").select("id,starts_at,duration_minutes,notes").eq("status","scheduled").gte("starts_at",now).order("starts_at",{ascending:true}).limit(1).maybeSingle(),
     supabase.from("pt_lessons").select("id",{count:"exact",head:true}).eq("status","completed"),
-    supabase.from("pt_measurements").select("id,measured_on,weight_kg,height_cm_used,bmi,fat_mass_percent").order("measured_on",{ascending:false}).limit(1).maybeSingle()
+    supabase.from("pt_measurements").select("id,measured_on,weight_kg,height_cm_used,bmi,fat_mass_percent").order("measured_on",{ascending:false}).limit(1).maybeSingle(),
+    supabase.from("pt_packages").select("id,total_lessons").order("created_at",{ascending:true}),
+    supabase.from("pt_lessons").select("id",{count:"exact",head:true}).eq("status","completed").not("package_id","is",null)
   ]);
-  const errors = [nextResult.error,completedResult.error,measurementResult.error].filter(Boolean);
+  const errors = [nextResult.error,completedResult.error,measurementResult.error,packagesResult.error,packageLessonsResult.error].filter(Boolean);
   if(errors.length) throw new Error("Impossibile aggiornare la dashboard: "+errors.map(e=>e!.message).join(" · "));
   const nextLesson=nextResult.data;
   const lastMeasurement=measurementResult.data;
+  const purchased=(packagesResult.data??[]).reduce((sum,p)=>sum+Number(p.total_lessons||0),0);
+  const used=packageLessonsResult.count??0;
+  const remaining=Math.max(0,purchased-used);
   const lessonDate=nextLesson?new Date(nextLesson.starts_at):null;
   const measurementDate=lastMeasurement?new Date(lastMeasurement.measured_on+"T12:00:00"):null;
   const fmtDate=(d:Date)=>d.toLocaleDateString("it-IT",{weekday:"short",day:"2-digit",month:"short"});
@@ -28,6 +33,7 @@ export default async function PersonalTrainerDashboardPage() {
       <div className="pt-grid pt-dashboard-grid">
         <article className="pt-card"><small>Prossima lezione</small><strong>{lessonDate?fmtDate(lessonDate):"—"}</strong><p className="pt-muted pt-dashboard-detail">{lessonDate?<><span>{fmtTime(lessonDate)}</span>{nextLesson?.notes&&<span className="pt-dashboard-note">{nextLesson.notes}</span>}</>:"Nessuna lezione programmata"}</p><Link href="/personal-trainer/lezioni">Apri calendario →</Link></article>
         <article className="pt-card"><small>Lezioni completate</small><strong>{completedResult.count??0}</strong><p className="pt-muted pt-dashboard-detail">Sessioni svolte con il tuo PT</p><Link href="/personal-trainer/lezioni">Vedi lezioni →</Link></article>
+        <article className="pt-card"><small>Lezioni residue</small><strong>{remaining}/{purchased}</strong><p className="pt-muted pt-dashboard-detail">{purchased>0?"Monte lezioni disponibile, incluse le residue dei pacchetti precedenti":"Nessun pacchetto registrato"}</p><Link href="/personal-trainer/pagamenti">Gestisci pacchetti →</Link></article>
         <article className="pt-card"><small>Ultima rilevazione</small><strong>{measurementDate?fmtDate(measurementDate):"—"}</strong><p className="pt-muted pt-dashboard-detail">{lastMeasurement?[
           lastMeasurement.weight_kg!=null?lastMeasurement.weight_kg+" kg":null,
           lastMeasurement.bmi!=null?"BMI "+lastMeasurement.bmi:null,
