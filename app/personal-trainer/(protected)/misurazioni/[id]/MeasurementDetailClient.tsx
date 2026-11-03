@@ -10,7 +10,8 @@ type Measurement = {
   suprailiac_mm: number | null; thigh_skinfold_mm: number | null; arm_right_cm: number | null; arm_left_cm: number | null;
   chest_cm: number | null; waist_cm: number | null; hips_cm: number | null; thigh_right_cm: number | null; thigh_left_cm: number | null; notes: string | null;
 };
-const groups = [
+type MeasurementField = [string, string, string];
+const groups: { title: string; fields: MeasurementField[] }[] = [
   { title: "Composizione corporea e pliche", fields: [
     ["fat_mass_percent","Massa grassa","%"],["triceps_mm","Plica tricipitale","mm"],["subscapular_mm","Plica sottoscapolare","mm"],
     ["abdominal_mm","Plica addominale","mm"],["suprailiac_mm","Plica sovrailiaca","mm"],["thigh_skinfold_mm","Plica coscia","mm"]
@@ -19,7 +20,7 @@ const groups = [
     ["arm_right_cm","Braccio destro","cm"],["arm_left_cm","Braccio sinistro","cm"],["chest_cm","Petto","cm"],
     ["waist_cm","Vita","cm"],["hips_cm","Fianchi","cm"],["thigh_right_cm","Coscia destra","cm"],["thigh_left_cm","Coscia sinistra","cm"]
   ]}
-] as const;
+];
 const allFields = groups.flatMap(g=>g.fields);
 export default function MeasurementDetailClient({ initial }: { initial: Measurement }) {
   const router=useRouter();
