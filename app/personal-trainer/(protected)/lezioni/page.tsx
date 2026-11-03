@@ -1,2 +1,10 @@
-import { SectionPage } from "@/app/personal-trainer/components/SectionPage";
-export default function Page() { return <SectionPage eyebrow="CALENDARIO" title="Lezioni" description="Programmazione condivisa e storico delle sessioni." emptyTitle="Nessuna lezione inserita" emptyDescription="Qui potrai programmare, modificare e consultare le lezioni passate e future." />; }
+import {requirePersonalTrainerProfile} from "@/lib/personal-trainer/auth";
+import {createPersonalTrainerServerClient} from "@/lib/personal-trainer/server";
+import LessonsClient from "./LessonsClient";
+export default async function LessonsPage(){
+ await requirePersonalTrainerProfile();
+ const supabase=await createPersonalTrainerServerClient();
+ const {data,error}=await supabase.from("pt_lessons").select("id,starts_at,duration_minutes,status,notes").order("starts_at",{ascending:false}).limit(200);
+ if(error) throw new Error("Impossibile caricare il calendario: "+error.message);
+ return <LessonsClient initial={data??[]}/>;
+}
