@@ -20,7 +20,7 @@ export default function MeasurementsClient({ initial, defaultHeight }: { initial
   const router=useRouter(); const [busy,setBusy]=useState(false); const [error,setError]=useState("");
   const [date,setDate]=useState(new Date().toISOString().slice(0,10)); const [weight,setWeight]=useState("");
   const [height,setHeight]=useState(defaultHeight?.toString() ?? ""); const [values,setValues]=useState<Record<string,string>>({}); const [notes,setNotes]=useState("");
-  async function save(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError("");
+  const bmi = weight && height && Number(weight)>0 && Number(height)>0 ? Number((Number(weight) / Math.pow(Number(height)/100, 2)).toFixed(2)) : null;\n  async function save(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError("");
     const supabase=createPersonalTrainerClient();
     const payload:Record<string,unknown>={measured_on:date,weight_kg:weight?Number(weight):null,height_cm_used:height?Number(height):null,notes:notes||null};
     for(const [key] of fields) payload[key]=values[key]?Number(values[key]):null;
