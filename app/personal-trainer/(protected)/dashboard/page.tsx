@@ -28,8 +28,8 @@ export default async function PersonalTrainerDashboardPage() {
   const remaining=Math.max(0,total-used);
   const lessonDate=nextLesson?new Date(nextLesson.starts_at):null;
   const measurementDate=lastMeasurement?new Date(lastMeasurement.measured_on+"T12:00:00"):null;
-  const fmtDate=(d:Date)=>d.toLocaleDateString("it-IT",{weekday:"short",day:"2-digit",month:"short"});
-  const fmtTime=(d:Date)=>d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
+  const fmtDate=(d:Date)=>d.toLocaleDateString("it-IT",{timeZone:"Europe/Rome",weekday:"short",day:"2-digit",month:"short"});
+  const fmtTime=(d:Date)=>d.toLocaleTimeString("it-IT",{timeZone:"Europe/Rome",hour:"2-digit",minute:"2-digit"});
   return (
     <div className="pt-page">
       <p className="pt-eyebrow" style={{ margin: 0 }}>PANORAMICA</p>
