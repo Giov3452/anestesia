@@ -12,7 +12,8 @@ export default async function PersonalTrainerProtectedLayout({ children }: { chi
     { href: "/personal-trainer/allenamenti", label: "Allenamenti", icon: Dumbbell },
     { href: "/personal-trainer/misurazioni", label: "Misurazioni", icon: Ruler },
     { href: "/personal-trainer/progressi", label: "Progressi", icon: Camera },
-    { href: "/personal-trainer/note", label: "Note", icon: NotebookPen },\n    ...(profile.role === "admin" ? [{ href: "/personal-trainer/diario", label: "Diario", icon: BookHeart }] : []),
+    { href: "/personal-trainer/note", label: "Note", icon: NotebookPen },
+    ...(profile.role === "admin" ? [{ href: "/personal-trainer/diario", label: "Diario", icon: BookHeart }] : []),
   ];
 
   return (
