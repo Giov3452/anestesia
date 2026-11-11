@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPersonalTrainerClient } from "@/lib/personal-trainer/client";
 
-type DiaryPost = { id:string; title:string; body_html:string; created_at:string; updated_at:string };
+type DiaryPost = { id:string; title:string; body_html:string; created_at:string; updated_at:string; is_pinned:boolean; pinned_at:string|null };
 
 function sanitizeHtml(input:string) {
   if (typeof window === "undefined") return "";
@@ -74,7 +74,7 @@ export default function DiarioClient({ initialPosts }: { initialPosts:DiaryPost[
     setBusy(true);
     const supabase = createPersonalTrainerClient();
     if (editingId === "new") {
-      const { data, error } = await supabase.from("pt_diary_posts").insert({ title:cleanTitle, body_html:cleanBody }).select("id,title,body_html,created_at,updated_at").single();
+      const { data, error } = await supabase.from("pt_diary_posts").insert({ title:cleanTitle, body_html:cleanBody }).select("id,title,body_html,created_at,updated_at,is_pinned,pinned_at").single();
       if (error) setError("Salvataggio non riuscito: " + error.message);
       else { setPosts(current => [data as DiaryPost, ...current]); cancelEdit(); }
     } else if (editingId) {
@@ -84,7 +84,7 @@ export default function DiarioClient({ initialPosts }: { initialPosts:DiaryPost[
     }
     setBusy(false);
   }
-  async function remove(post:DiaryPost) {
+  async function togglePin(post:DiaryPost) {\n    setError(""); setBusy(true);\n    const nextPinned = !post.is_pinned;\n    const { data, error } = await createPersonalTrainerClient().from("pt_diary_posts").update({ is_pinned:nextPinned, pinned_at:nextPinned ? new Date().toISOString() : null }).eq("id",post.id).select("id,title,body_html,created_at,updated_at,is_pinned,pinned_at").single();\n    if (error) setError("Impossibile aggiornare il post fissato: " + error.message);\n    else setPosts(current => [...current.filter(item=>item.id!==post.id), data as DiaryPost].sort((a,b)=>Number(b.is_pinned)-Number(a.is_pinned) || (b.pinned_at??"").localeCompare(a.pinned_at??"") || b.updated_at.localeCompare(a.updated_at)));\n    setBusy(false);\n  }\n  async function remove(post:DiaryPost) {
     if (!window.confirm("Vuoi eliminare definitivamente questo post dal tuo diario?")) return;
     setError(""); setBusy(true);
     const { error } = await createPersonalTrainerClient().from("pt_diary_posts").delete().eq("id",post.id);
@@ -120,9 +120,9 @@ export default function DiarioClient({ initialPosts }: { initialPosts:DiaryPost[
     {error && !editingId && <p className="pt-error" role="alert">{error}</p>}
     <div className="pt-diary-list">
       {posts.length===0 ? <div className="pt-empty">Il diario è ancora vuoto. Crea il tuo primo post.</div> : posts.map(post=><article className="pt-card pt-diary-post" key={post.id}>
-        <h3>{post.title}</h3>
+        <div className="pt-diary-post-heading">{post.is_pinned && <span className="pt-diary-pin-label">📌 Fissato</span>}<h3>{post.title}</h3></div>
         <div className="pt-diary-post-body" dangerouslySetInnerHTML={{__html:sanitizeHtml(post.body_html)}} />
-        <div className="pt-diary-post-footer"><small>Ultima modifica: {new Date(post.updated_at).toLocaleString("it-IT",{timeZone:"Europe/Rome",dateStyle:"medium",timeStyle:"short"})}</small><div className="pt-photo-actions"><button className="pt-secondary-button" disabled={busy} onClick={()=>startEdit(post)}>Modifica</button><button className="pt-secondary-button pt-diary-delete" disabled={busy} onClick={()=>remove(post)}>Elimina</button></div></div>
+        <div className="pt-diary-post-footer"><small>Ultima modifica: {new Date(post.updated_at).toLocaleString("it-IT",{timeZone:"Europe/Rome",dateStyle:"medium",timeStyle:"short"})}</small><div className="pt-photo-actions"><button className="pt-secondary-button" disabled={busy} onClick={()=>togglePin(post)}>{post.is_pinned ? "Rimuovi dai fissati" : "📌 Fissa in alto"}</button><button className="pt-secondary-button" disabled={busy} onClick={()=>startEdit(post)}>Modifica</button><button className="pt-secondary-button pt-diary-delete" disabled={busy} onClick={()=>remove(post)}>Elimina</button></div></div>
       </article>)}
     </div>
   </section>;
