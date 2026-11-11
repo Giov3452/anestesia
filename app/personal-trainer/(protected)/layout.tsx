@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, CalendarDays, CreditCard, Dumbbell, Ruler, Camera, NotebookPen, Settings, LogOut, UserRound } from "lucide-react";
+import { Activity, CalendarDays, CreditCard, Dumbbell, Ruler, Camera, NotebookPen, BookHeart, Settings, LogOut, UserRound } from "lucide-react";
 import { requirePersonalTrainerProfile } from "@/lib/personal-trainer/auth";
 
 export default async function PersonalTrainerProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -12,7 +12,7 @@ export default async function PersonalTrainerProtectedLayout({ children }: { chi
     { href: "/personal-trainer/allenamenti", label: "Allenamenti", icon: Dumbbell },
     { href: "/personal-trainer/misurazioni", label: "Misurazioni", icon: Ruler },
     { href: "/personal-trainer/progressi", label: "Progressi", icon: Camera },
-    { href: "/personal-trainer/note", label: "Note", icon: NotebookPen },
+    { href: "/personal-trainer/note", label: "Note", icon: NotebookPen },\n    ...(profile.role === "admin" ? [{ href: "/personal-trainer/diario", label: "Diario", icon: BookHeart }] : []),
   ];
 
   return (
