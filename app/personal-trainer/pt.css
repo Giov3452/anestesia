@@ -206,3 +206,17 @@
 .pt-diary-post-heading{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .pt-diary-post-heading h3{margin:0 0 14px}
 .pt-diary-pin-label{display:inline-flex;align-items:center;gap:5px;margin:0 0 14px;padding:4px 9px;border-radius:999px;background:#edf5ef;color:#315c40;font-size:11px;font-weight:700}
+
+
+/* Diario: comando di fissaggio sempre visibile accanto al titolo */
+.pt-diary-post-heading{justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.pt-diary-post-title{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
+.pt-diary-post-title h3{margin:0!important}
+.pt-diary-post-title .pt-diary-pin-label{margin:0}
+.pt-diary-pin-button{flex:0 0 auto;white-space:nowrap;min-height:42px}
+.pt-diary-post-body{display:block!important;visibility:visible!important;white-space:normal;min-height:1px}
+.pt-diary-post-body:empty{display:none!important}
+@media(max-width:520px){
+ .pt-diary-post-heading{align-items:stretch;flex-direction:column}
+ .pt-diary-pin-button{width:100%;min-height:46px}
+}
