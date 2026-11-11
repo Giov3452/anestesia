@@ -6,7 +6,10 @@ import { createPersonalTrainerClient } from "@/lib/personal-trainer/client";
 type DiaryPost = { id:string; title:string; body_html:string; created_at:string; updated_at:string; is_pinned:boolean; pinned_at:string|null };
 
 function sanitizeHtml(input:string) {
-  if (typeof window === "undefined") return "";
+  // I post sono già sanificati al salvataggio; sul server manteniamo l'HTML
+  // per consentire il rendering iniziale, evitando che il contenuto sparisca
+  // durante l'idratazione. Nel browser applichiamo nuovamente la whitelist.
+  if (typeof window === "undefined") return input;
   const parsed = new DOMParser().parseFromString(input, "text/html");
   const allowed = new Set(["P","BR","STRONG","B","EM","I","U","UL","OL","LI","BLOCKQUOTE","H2","H3","DIV"]);
   const clean = (node:Node) => {
@@ -30,7 +33,7 @@ function sanitizeHtml(input:string) {
 }
 
 function plainText(html:string) {
-  if (typeof window === "undefined") return "";
+  if (typeof window === "undefined") return html.replace(/<[^>]*>/g, " ");
   const doc = new DOMParser().parseFromString(sanitizeHtml(html), "text/html");
   return doc.body.textContent ?? "";
 }
@@ -80,7 +83,7 @@ export default function DiarioClient({ initialPosts }: { initialPosts:DiaryPost[
     } else if (editingId) {
       const { data, error } = await supabase.from("pt_diary_posts").update({ title:cleanTitle, body_html:cleanBody, updated_at:new Date().toISOString() }).eq("id",editingId).select("id,title,body_html,created_at,updated_at,is_pinned,pinned_at").single();
       if (error) setError("Modifica non riuscita: " + error.message);
-      else { setPosts(current => current.map(post => post.id === editingId ? data as DiaryPost : post).sort((a,b)=>b.updated_at.localeCompare(a.updated_at))); cancelEdit(); }
+      else { setPosts(current => current.map(post => post.id === editingId ? data as DiaryPost : post).sort((a,b)=>Number(b.is_pinned)-Number(a.is_pinned) || (b.pinned_at??"").localeCompare(a.pinned_at??"") || b.updated_at.localeCompare(a.updated_at))); cancelEdit(); }
     }
     setBusy(false);
   }
@@ -128,9 +131,9 @@ export default function DiarioClient({ initialPosts }: { initialPosts:DiaryPost[
     {error && !editingId && <p className="pt-error" role="alert">{error}</p>}
     <div className="pt-diary-list">
       {posts.length===0 ? <div className="pt-empty">Il diario è ancora vuoto. Crea il tuo primo post.</div> : posts.map(post=><article className="pt-card pt-diary-post" key={post.id}>
-        <div className="pt-diary-post-heading">{post.is_pinned && <span className="pt-diary-pin-label">📌 Fissato</span>}<h3>{post.title}</h3></div>
+        <div className="pt-diary-post-heading"><div className="pt-diary-post-title">{post.is_pinned && <span className="pt-diary-pin-label">📌 Fissato</span>}<h3>{post.title}</h3></div><button className="pt-secondary-button pt-diary-pin-button" disabled={busy} onClick={()=>togglePin(post)}>{post.is_pinned ? "📌 Rimuovi fissaggio" : "📌 Fissa in alto"}</button></div>
         <div className="pt-diary-post-body" dangerouslySetInnerHTML={{__html:sanitizeHtml(post.body_html)}} />
-        <div className="pt-diary-post-footer"><small>Ultima modifica: {new Date(post.updated_at).toLocaleString("it-IT",{timeZone:"Europe/Rome",dateStyle:"medium",timeStyle:"short"})}</small><div className="pt-photo-actions"><button className="pt-secondary-button" disabled={busy} onClick={()=>togglePin(post)}>{post.is_pinned ? "Rimuovi dai fissati" : "📌 Fissa in alto"}</button><button className="pt-secondary-button" disabled={busy} onClick={()=>startEdit(post)}>Modifica</button><button className="pt-secondary-button pt-diary-delete" disabled={busy} onClick={()=>remove(post)}>Elimina</button></div></div>
+        <div className="pt-diary-post-footer"><small>Ultima modifica: {new Date(post.updated_at).toLocaleString("it-IT",{timeZone:"Europe/Rome",dateStyle:"medium",timeStyle:"short"})}</small><div className="pt-photo-actions"><button className="pt-secondary-button" disabled={busy} onClick={()=>startEdit(post)}>Modifica</button><button className="pt-secondary-button pt-diary-delete" disabled={busy} onClick={()=>remove(post)}>Elimina</button></div></div>
       </article>)}
     </div>
   </section>;
