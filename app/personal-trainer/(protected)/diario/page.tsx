@@ -7,8 +7,8 @@ export default async function DiarioPage() {
   const supabase = await createPersonalTrainerServerClient();
   const { data, error } = await supabase
     .from("pt_diary_posts")
-    .select("id,title,body_html,created_at,updated_at")
-    .order("updated_at", { ascending: false });
+    .select("id,title,body_html,created_at,updated_at,is_pinned,pinned_at")
+    .order("is_pinned", { ascending: false }).order("pinned_at", { ascending: false, nullsFirst: false }).order("updated_at", { ascending: false });
   if (error) throw new Error("Impossibile caricare il diario: " + error.message);
   return <DiarioClient initialPosts={data ?? []} />;
 }
