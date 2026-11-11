@@ -78,13 +78,21 @@ export default function DiarioClient({ initialPosts }: { initialPosts:DiaryPost[
       if (error) setError("Salvataggio non riuscito: " + error.message);
       else { setPosts(current => [data as DiaryPost, ...current]); cancelEdit(); }
     } else if (editingId) {
-      const { data, error } = await supabase.from("pt_diary_posts").update({ title:cleanTitle, body_html:cleanBody, updated_at:new Date().toISOString() }).eq("id",editingId).select("id,title,body_html,created_at,updated_at").single();
+      const { data, error } = await supabase.from("pt_diary_posts").update({ title:cleanTitle, body_html:cleanBody, updated_at:new Date().toISOString() }).eq("id",editingId).select("id,title,body_html,created_at,updated_at,is_pinned,pinned_at").single();
       if (error) setError("Modifica non riuscita: " + error.message);
       else { setPosts(current => current.map(post => post.id === editingId ? data as DiaryPost : post).sort((a,b)=>b.updated_at.localeCompare(a.updated_at))); cancelEdit(); }
     }
     setBusy(false);
   }
-  async function togglePin(post:DiaryPost) {\n    setError(""); setBusy(true);\n    const nextPinned = !post.is_pinned;\n    const { data, error } = await createPersonalTrainerClient().from("pt_diary_posts").update({ is_pinned:nextPinned, pinned_at:nextPinned ? new Date().toISOString() : null }).eq("id",post.id).select("id,title,body_html,created_at,updated_at,is_pinned,pinned_at").single();\n    if (error) setError("Impossibile aggiornare il post fissato: " + error.message);\n    else setPosts(current => [...current.filter(item=>item.id!==post.id), data as DiaryPost].sort((a,b)=>Number(b.is_pinned)-Number(a.is_pinned) || (b.pinned_at??"").localeCompare(a.pinned_at??"") || b.updated_at.localeCompare(a.updated_at)));\n    setBusy(false);\n  }\n  async function remove(post:DiaryPost) {
+  async function togglePin(post:DiaryPost) {
+    setError(""); setBusy(true);
+    const nextPinned = !post.is_pinned;
+    const { data, error } = await createPersonalTrainerClient().from("pt_diary_posts").update({ is_pinned:nextPinned, pinned_at:nextPinned ? new Date().toISOString() : null }).eq("id",post.id).select("id,title,body_html,created_at,updated_at,is_pinned,pinned_at").single();
+    if (error) setError("Impossibile aggiornare il post fissato: " + error.message);
+    else setPosts(current => [...current.filter(item=>item.id!==post.id), data as DiaryPost].sort((a,b)=>Number(b.is_pinned)-Number(a.is_pinned) || (b.pinned_at??"").localeCompare(a.pinned_at??"") || b.updated_at.localeCompare(a.updated_at)));
+    setBusy(false);
+  }
+  async function remove(post:DiaryPost) {
     if (!window.confirm("Vuoi eliminare definitivamente questo post dal tuo diario?")) return;
     setError(""); setBusy(true);
     const { error } = await createPersonalTrainerClient().from("pt_diary_posts").delete().eq("id",post.id);
