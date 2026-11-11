@@ -132,7 +132,7 @@ export default function DiarioClient({ initialPosts }: { initialPosts:DiaryPost[
     <div className="pt-diary-list">
       {posts.length===0 ? <div className="pt-empty">Il diario è ancora vuoto. Crea il tuo primo post.</div> : posts.map(post=><article className="pt-card pt-diary-post" key={post.id}>
         <div className="pt-diary-post-heading"><div className="pt-diary-post-title">{post.is_pinned && <span className="pt-diary-pin-label">📌 Fissato</span>}<h3>{post.title}</h3></div><button className="pt-secondary-button pt-diary-pin-button" disabled={busy} onClick={()=>togglePin(post)}>{post.is_pinned ? "📌 Rimuovi fissaggio" : "📌 Fissa in alto"}</button></div>
-        <div className="pt-diary-post-body" dangerouslySetInnerHTML={{__html:sanitizeHtml(post.body_html)}} />
+        {/<[a-z][\s\S]*>/i.test(post.body_html) ? <div className="pt-diary-post-body" dangerouslySetInnerHTML={{__html:post.body_html}} /> : <div className="pt-diary-post-body pt-diary-plain-text">{post.body_html.replace(/&nbsp;/gi," ")}</div>}
         <div className="pt-diary-post-footer"><small>Ultima modifica: {new Date(post.updated_at).toLocaleString("it-IT",{timeZone:"Europe/Rome",dateStyle:"medium",timeStyle:"short"})}</small><div className="pt-photo-actions"><button className="pt-secondary-button" disabled={busy} onClick={()=>startEdit(post)}>Modifica</button><button className="pt-secondary-button pt-diary-delete" disabled={busy} onClick={()=>remove(post)}>Elimina</button></div></div>
       </article>)}
     </div>
