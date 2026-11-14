@@ -24,7 +24,7 @@ export default function HistoricalCounters(){
   const role=String(p?.role||r||"utente").toLowerCase(),ok=["admin","super_admin"].includes(role);setAuthorized(ok);if(!ok)return;
   const [{data:u,error:ue},{data:d,error:de}]=await Promise.all([s.from("profiles").select("id,username,email,role,employment_role,service").order("username"),s.from("shift_definitions").select("short_name,duration_minutes")]);
   if(ue||de){setError(ue?.message||de?.message||"Errore nel caricamento dello storico.");return}
-  setUsers((u||[]) as User[]);const defs=new Map((d||[]).map((x:any)=>[x.short_name,Number(x.duration_minutes)]));
+  setUsers(((u||[]) as User[]).filter(x=>!["federiccia02","zao1","prova_prova"].includes(String(x.username||"").toLowerCase())));const defs=new Map((d||[]).map((x:any)=>[x.short_name,Number(x.duration_minutes)]));
   const from=`${year}-${String(month+1).padStart(2,"0")}-01`,to=new Date(year,month+1,0).toISOString().slice(0,10);
   const {data:c,error:ce}=await s.from("calendar_shifts").select("user_id,short_name").gte("shift_date",from).lte("shift_date",to);
   if(ce){setError(ce.message);return}setShifts((c||[]).map((x:any)=>({user_id:x.user_id,short_name:x.short_name,duration_minutes:defs.get(x.short_name)||0})));
