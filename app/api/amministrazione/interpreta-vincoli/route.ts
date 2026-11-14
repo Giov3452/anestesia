@@ -102,7 +102,7 @@ export async function POST(request: Request) {
       if (constraintName === "mo2") {
         // Mo2 is a daily coverage requirement from Monday through Wednesday.
         // The original rule does not name a specific employee.
-        Object.assign(safeRule, {status:"supported",kind:"require_shift_daily",shiftCodes:["Mo2"],count:1,weekdays:[1,2,3],excludeHolidays:false,username:null,employmentRoles:[],allowedWeekdays:[1,2,3],unsupportedReason:null,rationale:constraint.description});
+        Object.assign(safeRule, {status:"supported",kind:"require_shift_daily",shiftCodes:["Mo2"],count:1,weekdays:[1,2,3],excludeHolidays:false,username:null,employmentRoles:[],service:"anestesia",allowedWeekdays:[1,2,3],unsupportedReason:null,rationale:constraint.description});
       }
       if (constraintName === "endoscopia") {
         // The existing generator historically schedules one E on Thursdays.
