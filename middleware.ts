@@ -47,11 +47,9 @@ export async function middleware(request: NextRequest) {
   );
 
   // Verify the JWT claims without fetching the full user record.
-  const {
-    data: { claims },
-    error: claimsError,
-  } = await supabase.auth.getClaims();
-  const userId = claimsError ? null : claims?.sub;
+  const { data: verifiedJwt, error: claimsError } =
+    await supabase.auth.getClaims();
+  const userId = claimsError ? null : verifiedJwt?.claims?.sub;
 
   if (!userId) {
     return NextResponse.redirect(new URL("/login", request.url));
