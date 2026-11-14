@@ -37,7 +37,7 @@ export default function Counters(){
    s.from("shift_definitions").select("short_name,duration_minutes")
   ]);
   if(ue||de){setError(ue?.message||de?.message||"Errore nel caricamento");return}
-  setUsers((u||[]) as User[]);
+  setUsers(((u||[]) as User[]).filter(x=>!["federiccia02","zao1","prova_prova"].includes(String(x.username||"").toLowerCase())));
   const defs=new Map((d||[]).map((x:any)=>[x.short_name,Number(x.duration_minutes)]));
   const from=String(year)+"-"+String(month+1).padStart(2,"0")+"-01";
   const to=new Date(year,month+1,0).toISOString().slice(0,10);
