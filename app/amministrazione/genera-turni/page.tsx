@@ -189,7 +189,7 @@ export default function GenerateShifts(){
       const normalizedService=(u:User)=>String(u.service||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase();
       const requiredServiceForShift=(code:string)=>["GRia","NRia","MRia","RP"].includes(code)?"rianimazione":code==="E"?"any":"anestesia";
       const compiledRules:ParsedGeneratorRule[]=rules.filter(r=>r.enabled).map(r=>getParsedRule(r)).filter((r):r is ParsedGeneratorRule=>!!r);
-      const usernameMatches=(ruleName:string|null,username:string)=>!!ruleName&&username.toLowerCase().replaceAll("_"," ").trim()===ruleName.toLowerCase().replaceAll("_"," ").trim();
+      const usernameMatches=(ruleName:string|null,username:string)=>!!ruleName&&ruleName.split("|").some(name=>username.toLowerCase().replaceAll("_"," ").trim()===name.toLowerCase().replaceAll("_"," ").trim());
       const textRule=(needle:string)=>rules.find(r=>r.enabled&&(`${r.name} ${r.description}`).toLowerCase().includes(needle.toLowerCase()));
       const restRule=rules.find(r=>r.code==="rest_after_night"&&r.enabled);
       const partTimeRule=textRule("part time");
