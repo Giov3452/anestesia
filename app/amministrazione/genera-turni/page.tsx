@@ -220,6 +220,8 @@ export default function GenerateShifts(){
       const hasAnyRequest=(uid:string,date:string)=>((req||[]) as any[]).some(r=>r.user_id===uid&&r.request_date===date);
       const currentHours=(uid:string)=>allAssignments().filter(a=>a.user_id===uid&&!["SN","RC","RG","RN","RP","R","Rp"].includes(a.short_name)).reduce((sum,a)=>sum+duration(a.short_name),0);
       const previousDay=(date:string)=>{const d=new Date(date+"T00:00:00");d.setDate(d.getDate()-1);return iso(d.getFullYear(),d.getMonth(),d.getDate());};
+      const daysBefore=(date:string,days:number)=>{const d=new Date(date+"T00:00:00");d.setDate(d.getDate()-days);return iso(d.getFullYear(),d.getMonth(),d.getDate());};
+      const hasShiftOnDate=(uid:string,date:string,code:string)=>allAssignments().some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name===code)||((old||[]) as any[]).some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name===code);
       const hadNight=(uid:string,date:string)=>allAssignments().some(a=>a.user_id===uid&&a.shift_date===date&&a.short_name==="N")||((old||[]) as any[]).some(a=>a.user_id===uid&&a.short_name==="N");
       const hardBlocked=(u:User,date:string,code:string,allowMriaPair=false)=>{
         if(u.employment_role==="gettonista")return true;
@@ -244,7 +246,11 @@ export default function GenerateShifts(){
           if(rule.kind==="forbid_shift_for_user"&&userMatch&&codeMatch)return true;
           if(rule.kind==="forbid_shift_for_role"&&roleMatch&&codeMatch)return true;
           if(rule.kind==="allowed_weekdays_for_role"&&roleMatch&&rule.allowedWeekdays&&!rule.allowedWeekdays.includes(dow))return true;
-          if(rule.kind==="rest_after_shift"&&rule.afterShiftCodes.some(prevCode=>allAssignments().some(a=>a.user_id===u.id&&a.shift_date===previousDay(date)&&a.short_name===prevCode)))return true;
+          if(rule.kind==="rest_after_shift"&&rule.afterShiftCodes.some(prevCode=>{
+            const restDays=Math.max(1,Number(rule.count)||1);
+            for(let offset=1;offset<=restDays;offset++){if(hasShiftOnDate(u.id,daysBefore(date,offset),prevCode))return true;}
+            return false;
+          }))return true;
         }
         if(hasAnyWork(u.id,date)){
           const sameDayWork=allAssignments().filter(a=>a.user_id===u.id&&a.shift_date===date&&a.short_name!=="SN");
