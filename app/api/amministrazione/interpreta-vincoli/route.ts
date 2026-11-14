@@ -135,6 +135,7 @@ export async function POST(request: Request) {
       return {id:constraint.id,name:constraint.name,status:safeRule.status,kind:safeRule.kind,reason:safeRule.unsupportedReason};
     }));
     results.sort((a,b)=>a.id-b.id);
+    return NextResponse.json({processed:results.length,supported:results.filter(r=>r.status==="supported").length,needsReview:results.filter(r=>r.status!=="supported").length,results});
   } catch (error) {
     return NextResponse.json({error:error instanceof Error?error.message:"Errore inatteso durante l'interpretazione."},{status:500});
   }
