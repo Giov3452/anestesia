@@ -104,6 +104,13 @@ export async function POST(request: Request) {
         // The existing generator historically schedules one E on Thursdays.
         Object.assign(safeRule, {status:"supported",kind:"require_shift_daily",shiftCodes:["E"],count:1,weekdays:[4],excludeHolidays:true,username:null,employmentRoles:[],allowedWeekdays:[4],maxPerUserDay:null,unsupportedReason:null,rationale:constraint.description});
       }
+      if (constraintName === "elimina" && /non devono essere assegnati turni/i.test(String(constraint.description))) {
+        // A single rule can exclude several named accounts. Store the normalized
+        // usernames in a delimiter-separated field consumed by usernameMatches.
+        const excluded = [...new Set((String(constraint.description).match(/[a-z0-9]+(?:_[a-z0-9]+)+|[a-z0-9]+/gi) || [])
+          .filter((token:string) => !["A","NON","DEVONO","ESSERE","ASSEGNATI","TURNI","E","NEI","CONTATORI"].includes(token.toUpperCase())))];
+        Object.assign(safeRule, {status:"supported",kind:"forbid_shift_for_user",shiftCodes:[],username:excluded.join("|"),unsupportedReason:null,rationale:constraint.description});
+      }
       if (constraintName === "rp" || (String(constraint.description).includes("RP") && String(constraint.description).includes("MRia"))) {
         // Prefer pairing RP with the same user as MRia, but allow fallback assignment.
         Object.assign(safeRule, {status:"supported",kind:"prefer_same_user_shift",shiftCodes:["RP","MRia"],count:null,weekdays:null,excludeHolidays:false,username:null,employmentRoles:[],allowedWeekdays:null,maxPerUserDay:null,afterShiftCodes:[],unsupportedReason:null,rationale:constraint.description});
