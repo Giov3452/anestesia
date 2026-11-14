@@ -81,7 +81,7 @@ export default function GenerateShifts(){
       s.from("generator_constraints").select("*").order("id"),
       s.from("gettonista_availability").select("id,user_id,availability_date,cause,notes,created_at").gte("availability_date",start).lte("availability_date",end).order("availability_date")
     ]);
-    setUsers(us||[]);setDefs(ds||[]);setAssignments(as||[]);setRequests(req||[]);setVacations(vac||[]);setRules(rr||[]);setGettonistaAvailability(ga||[]);
+    setUsers((us||[]).filter((u:User)=>!["federiccia02","zao1","prova_prova"].includes(String(u.username||"").toLowerCase())));setDefs(ds||[]);setAssignments(as||[]);setRequests(req||[]);setVacations(vac||[]);setRules(rr||[]);setGettonistaAvailability(ga||[]);
     const {data:monthStatus}=await s.from("calendar_month_status").select("validated").eq("year",y).eq("month",m+1).maybeSingle();
     setValidated(Boolean(monthStatus?.validated));
     // Load the previous month's last day N as context; it is used by the automatic generator.
