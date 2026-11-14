@@ -88,6 +88,10 @@ export async function POST(request: Request) {
       // deterministic; they do not alter calendar assignments.
       const constraintName = String(constraint.name || "").trim().toLocaleLowerCase("it-IT");
       const constraintCode = String(constraint.code || "").trim().toLocaleLowerCase("it-IT");
+      if (constraintName === "smonto e riposo dopo nria") {
+        // NRia requires two complete days without any work assignment afterwards.
+        Object.assign(safeRule, {status:"supported",kind:"rest_after_shift",shiftCodes:["NRia"],afterShiftCodes:["NRia"],count:2,weekdays:null,excludeHolidays:false,username:null,employmentRoles:[],service:null,unsupportedReason:null,rationale:constraint.description});
+      }
       if ((constraintCode === "rest_after_night" || constraintName === "smonto notte") && safeRule.kind === "rest_after_shift") {
         safeRule.afterShiftCodes = safeRule.afterShiftCodes.length ? safeRule.afterShiftCodes : (safeRule.shiftCodes.length ? [...safeRule.shiftCodes] : ["N"]);
         safeRule.status = "supported";
