@@ -240,6 +240,7 @@ export default function GenerateShifts(){
           const roleMatch=rule.employmentRoles.length===0||rule.employmentRoles.includes(u.employment_role);
           const userMatch=!rule.username||usernameMatches(rule.username,u.username);
           const codeMatch=rule.shiftCodes.length===0||rule.shiftCodes.includes(code);
+          if(rule.kind==="require_shift_daily"&&codeMatch&&rule.service&&normalizedService(u)!==rule.service)return true;
           if(rule.kind==="forbid_shift_for_user"&&userMatch&&codeMatch)return true;
           if(rule.kind==="forbid_shift_for_role"&&roleMatch&&codeMatch)return true;
           if(rule.kind==="allowed_weekdays_for_role"&&roleMatch&&rule.allowedWeekdays&&!rule.allowedWeekdays.includes(dow))return true;
