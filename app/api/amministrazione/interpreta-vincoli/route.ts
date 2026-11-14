@@ -75,8 +75,7 @@ export async function POST(request: Request) {
     if (!content) throw new Error("Il servizio AI non ha restituito regole.");
     const compiled = JSON.parse(content) as {rules:{id:number;parsedRule:ParsedGeneratorRule}[]};
     const byId = new Map<number,ParsedGeneratorRule>((compiled.rules || []).map(item=>[item.id,item.parsedRule] as const));
-    const results:any[] = [];
-    for (const constraint of active as any[]) {
+    const results:any[] = await Promise.all((active as any[]).map(async (constraint:any) => {
       const parsed = byId.get(constraint.id);
       const valid = validateParsedRule(parsed);
       const safeRule:ParsedGeneratorRule = valid ? parsed! : {
@@ -133,9 +132,9 @@ export async function POST(request: Request) {
       const config = {...(constraint.config || {}),parsed_rule:safeRule,parsed_at:new Date().toISOString(),parsed_model:model};
       const {error:updateError} = await supabase.from("generator_constraints").update({config}).eq("id",constraint.id);
       if (updateError) throw updateError;
-      results.push({id:constraint.id,name:constraint.name,status:safeRule.status,kind:safeRule.kind,reason:safeRule.unsupportedReason});
-    }
-    return NextResponse.json({processed:results.length,supported:results.filter(r=>r.status==="supported").length,needsReview:results.filter(r=>r.status!=="supported").length,results});
+      return {id:constraint.id,name:constraint.name,status:safeRule.status,kind:safeRule.kind,reason:safeRule.unsupportedReason};
+    }));
+    results.sort((a,b)=>a.id-b.id);
   } catch (error) {
     return NextResponse.json({error:error instanceof Error?error.message:"Errore inatteso durante l'interpretazione."},{status:500});
   }
