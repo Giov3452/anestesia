@@ -108,7 +108,7 @@ export async function POST(request: Request) {
         // A single rule can exclude several named accounts. Store the normalized
         // usernames in a delimiter-separated field consumed by usernameMatches.
         const excluded = [...new Set((String(constraint.description).match(/[a-z0-9]+(?:_[a-z0-9]+)+|[a-z0-9]+/gi) || [])
-          .filter((token:string) => !["A","NON","DEVONO","ESSERE","ASSEGNATI","TURNI","E","NEI","CONTATORI"].includes(token.toUpperCase())))];
+          .filter((token:string) => !["A","NON","DEVONO","ESSERE","ASSEGNATI","TURNI","E","NEI","CONTATORI","COMPARIRE"].includes(token.toUpperCase())))];
         Object.assign(safeRule, {status:"supported",kind:"forbid_shift_for_user",shiftCodes:[],username:excluded.join("|"),unsupportedReason:null,rationale:constraint.description});
       }
       if (constraintName === "rp" || (String(constraint.description).includes("RP") && String(constraint.description).includes("MRia"))) {
